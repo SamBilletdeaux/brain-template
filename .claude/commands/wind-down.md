@@ -82,13 +82,21 @@ Present what was found and ask for confirmation:
 
 **Include all?** Or should I skip any?
 
-**Additional assets?** If you have transcripts from other tools, docs, Slack threads,
-or anything else that should be processed alongside today's meetings,
-share them now. You can also add seed notes (e.g., "the 3pm call was
-mostly about X, focus on that").
+**Additional files?** If you have transcripts from other tools, docs, Slack threads,
+or anything else that should be processed alongside today's meetings:
+- Say "pick files" and I'll open a file picker for you
+- Or paste/drag content directly into the chat
+- You can also add seed notes (e.g., "the 3pm call was mostly about X, focus on that")
 ```
 
-Wait for the user's response before proceeding. If additional assets are provided, incorporate them alongside the auto-extracted data.
+Wait for the user's response before proceeding.
+
+**If the user says "pick files" or similar:**
+1. Run the file picker: `./scripts/pick-files.sh "Select files to process:"`
+2. A native Finder window will open for the user to select files
+3. Read the selected files and incorporate them alongside the auto-extracted data
+
+If additional assets are provided by any method, incorporate them alongside the auto-extracted data.
 
 ### 0e. Archive Raw Data
 
