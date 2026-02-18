@@ -69,6 +69,12 @@ During `/wind-down`:
 - Corrections become durable rules in preferences.md
 - Say **"commit"** when ready to write all changes
 
+## Known Gotchas
+- **Slash commands not working?** Restart the Claude Code session after adding new commands to `.claude/commands/`
+- **First template sync fails?** Use `git merge template/master --allow-unrelated-histories`
+- **Large Zoom transcripts?** May exceed token limits — read in chunks or preprocess
+- **Granola transcripts missing?** Cache only holds ~1 day — run `/wind-down` same day
+
 ## Design Principles
 - Threads, not projects (flat > hierarchical)
 - Confidence tagging on all AI decisions (🟢/🟡/🔴)
