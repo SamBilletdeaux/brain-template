@@ -27,6 +27,11 @@ brain/
 - Changes here get pulled into private repos via `git pull template master`
 - Keep template files clean of personal data
 
+## Session Management
+- `claude --continue` - resume last session
+- `claude --resume` - pick from recent sessions
+- `/capture` - extract stable facts from conversation into CLAUDE.md
+
 ## Design Principles
 - Threads, not projects (flat > hierarchical)
 - Confidence tagging on all AI decisions
