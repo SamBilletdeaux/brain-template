@@ -23,7 +23,7 @@ underlying rule gets captured here so it doesn't happen again.
 <!-- Accumulated through use. Examples:
 - "Standup": Daily 15-min sync at 9:30am
 - "OKR review": Quarterly planning meeting with leadership
-- Speech-to-text quirks: "Way" = "Wei", "Seen" = "Xin", etc.
+- Speech-to-text quirks: "Jon" = "John", "Alise" = "Alice", etc.
 -->
 
 (Will accumulate as the system learns your domain.)
