@@ -284,3 +284,29 @@ Or browse everything in the web UI: http://localhost:3141
 ```
 
 Your corrections during wind-down feed back into preferences.md, making the system smarter over time. The whole thing is a learning loop.
+
+---
+
+## External Integrations
+
+Each integration is optional and independent. They extend the brain to where work actually happens.
+
+### Slack Bot (web/integrations/slack.js)
+**What**: A Slack bot that lets you interact with your brain from Slack — search, get status, view meeting prep. Also captures starred messages to your inbox automatically.
+**Why**: You're already in Slack all day. Being able to `/brain search AISP` without switching to a terminal saves context switches. Starred messages become a natural "save this for later" gesture that actually works.
+**How**: Uses @slack/bolt with Socket Mode (no public URL needed). Set `SLACK_BOT_TOKEN` and `SLACK_SIGNING_SECRET` env vars.
+
+### Email (web/integrations/email.js)
+**What**: An IMAP watcher that monitors a mailbox for forwarded emails and saves them to your brain's inbox as markdown.
+**Why**: When someone sends you something worth remembering, forward it to your brain address. It gets processed in the next wind-down along with your meeting transcripts.
+**How**: Watches a designated mailbox (like a "Brain" Gmail label). Converts emails to markdown in `inbox/email/`. Set `BRAIN_EMAIL_HOST`, `BRAIN_EMAIL_USER`, `BRAIN_EMAIL_PASS`.
+
+### Linear (web/integrations/linear.js)
+**What**: Bidirectional sync between your commitments and Linear tickets.
+**Why**: Some commitments become tickets. Instead of tracking them in two places, tag a commitment with `@linear:PROJ-123` and they stay in sync. When the ticket closes in Linear, the commitment auto-completes in your brain.
+**How**: Polls Linear API and handles webhooks. Set `LINEAR_API_KEY`. Trigger sync via `POST /api/linear/sync` or set up a Linear webhook.
+
+### Browser Extension (extension/)
+**What**: A Chrome extension with an "Add to Brain" button. Right-click any page (or selected text) to capture it.
+**Why**: You're reading an article, a Slack thread in the browser, a Confluence page — anything worth remembering. One click captures it to your inbox with a note about why it matters.
+**How**: Sends to `localhost:3141/api/inbox`. Install via Chrome → Extensions → Developer Mode → Load Unpacked → select the `extension/` folder.

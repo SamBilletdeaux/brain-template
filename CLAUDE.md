@@ -51,7 +51,21 @@ A local web app for browsing your brain in a browser. Not deployed — runs on `
 ./scripts/brain-server.sh status           # Check if running
 ```
 
-Pages: Dashboard (`/`), Timeline (`/timeline`), Search (`/search`), Thread detail (`/thread/:name`), Person detail (`/person/:name`)
+Pages: Dashboard (`/`), Timeline (`/timeline`), Prep (`/prep`), Drafts (`/drafts`), Follow-Ups (`/follow-ups`), Search (`/search`), Thread (`/thread/:name`), Person (`/person/:name`)
+
+## Integrations (in web/integrations/)
+
+| Integration | Env Vars Needed | What it does |
+|-------------|----------------|--------------|
+| Slack | `SLACK_BOT_TOKEN`, `SLACK_SIGNING_SECRET` | `/brain` slash command, starred message capture, DM delivery |
+| Email | `BRAIN_EMAIL_HOST`, `BRAIN_EMAIL_USER`, `BRAIN_EMAIL_PASS` | IMAP watcher, forward-to-brain, mailto links |
+| Linear | `LINEAR_API_KEY` | Bidirectional commitment ↔ issue sync |
+
+## Browser Extension (in extension/)
+
+Chrome extension: "Add to Brain" — right-click or popup to capture any web page, selected text, or note to your brain's inbox. Sends to `localhost:3141/api/inbox`.
+
+Install: Chrome → `chrome://extensions` → Developer mode → Load unpacked → select `extension/` folder
 
 ### extract-granola.sh usage:
 ```bash
@@ -83,7 +97,8 @@ brain/
 │   ├── notes/          # Quick captures
 │   ├── files/          # Manual uploads
 │   └── .processed/     # Processed item markers
-├── web/                # Local web UI (Express + SQLite)
+├── web/                # Local web UI (Express + SQLite + integrations)
+├── extension/          # Chrome "Add to Brain" extension
 ├── .brain.db           # SQLite search index (gitignored, rebuildable)
 ├── config.md           # User identity and data sources
 ├── preferences.md      # Learned rules from corrections
