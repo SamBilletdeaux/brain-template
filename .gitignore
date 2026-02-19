@@ -9,4 +9,7 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Inbox — raw data, not committed (snapshotted transcripts, uploads, notes)
+inbox/
+
 # Don't ignore any markdown files — they're the whole point
