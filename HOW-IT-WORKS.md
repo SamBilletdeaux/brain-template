@@ -187,6 +187,37 @@ Commands:
 
 ---
 
+## Proactive Operations
+
+The system doesn't just wait for you to ask — it watches, prepares, and nudges.
+
+### Meeting Prep (generate-prep.py)
+**What**: Before your meetings, auto-generates a prep packet with attendee context, relevant threads, open commitments, and recent handoff mentions.
+**Why**: Walking into a meeting prepared means better outcomes. This pulls everything you need from your brain files in seconds instead of you having to open and read multiple files.
+**How**: Reads calendar data from Granola, matches attendees to people files (by name, email, or even parsing the meeting title), finds threads that mention those people, and checks for related commitments. Output goes to `inbox/prep/`.
+
+### Notifications (notify.sh)
+**What**: macOS notifications for wind-down reminders (8pm), stale commitments (9am), and meeting prep readiness (8am/12pm).
+**Why**: The system should nudge you, not the other way around. If you haven't processed today's meetings by evening, you get a reminder. If a commitment is going stale, you get a heads-up.
+**How**: Shell script using `osascript` for native macOS notifications. Three launchd agents run on schedule. Install with `install-notifications.sh`.
+
+### Background Processor (background-processor.py)
+**What**: Watches the inbox for new transcript snapshots and auto-generates draft summaries with extracted entities, potential action items, and related threads.
+**Why**: Wind-down used to mean waiting while Claude processed transcripts from scratch. Now the background processor pre-digests transcripts as they arrive. Wind-down becomes: review what the system already prepared.
+**How**: Scans `inbox/granola/` recursively, processes each transcript (AI-powered if `ANTHROPIC_API_KEY` is set, rule-based otherwise), writes drafts to `inbox/drafts/`. Run with `--once` or in continuous watch mode.
+
+### Follow-Up Drafts (generate-followups.py)
+**What**: Detects commitments that look like "send X to Y" or "share X with Y" and generates draft message skeletons with context.
+**Why**: The hardest part of following up is starting the message. This gives you a draft with the commitment, source meeting, related handoff context, and a message template. You edit and send — the system never sends on its own.
+**How**: Pattern-matches active commitments against follow-up verbs (share, send, follow up, email, etc.), cross-references people files and handoff entries, writes to `inbox/drafts/follow-ups/`.
+
+### Weekly Review (/weekly-review)
+**What**: A Friday reflection command that analyzes the past week — which threads moved, which stalled, commitment scorecard, people interactions, system health trends.
+**Why**: Daily wind-down captures the trees. Weekly review shows the forest. Helps you spot patterns: are you neglecting a thread? Is a commitment going stale? Have you lost touch with someone?
+**How**: Claude Code command that reads health.md history, handoff entries, threads, people, and commitments from the past 7 days, then generates a structured review.
+
+---
+
 ## The Web UI
 
 **What**: A local web app that lets you browse your entire brain in a browser at `http://localhost:3141`. Not deployed anywhere — it runs on your machine, reading your local files and search index.
@@ -200,6 +231,9 @@ Commands:
 | Dashboard | `/` | Overview of everything: threads, people, open commitments, health stats |
 | Timeline | `/timeline` | Handoff entries in chronological order — your daily log as a readable feed |
 | Search | `/search` | Full-text search powered by the SQLite index. Finds matches across all files |
+| Prep | `/prep` | Meeting prep packets with attendee context, relevant threads, commitments |
+| Drafts | `/drafts` | Auto-processed transcript summaries from the background processor |
+| Follow-Ups | `/follow-ups` | Draft messages for action items that involve sending something to someone |
 | Thread detail | `/thread/:name` | A single thread file rendered as HTML with clickable wiki-links |
 | Person detail | `/person/:name` | A single person file rendered as HTML |
 

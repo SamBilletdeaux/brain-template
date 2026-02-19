@@ -14,6 +14,7 @@ A personal knowledge system that processes meeting transcripts into living docum
 | `/sync-template` | Pull latest template updates into private brain |
 | `/doctor` | System health check — validates config, links, staleness |
 | `/search` | Full-text search across all brain files and relationships |
+| `/weekly-review` | Weekly reflection — threads, commitments, trends |
 
 ## Helper Scripts (in scripts/)
 
@@ -33,6 +34,12 @@ A personal knowledge system that processes meeting transcripts into living docum
 | `schema.sql` | SQLite schema for the search index |
 | `install-hooks.sh` | Install git post-commit hook for auto-indexing |
 | `brain-server.sh` | Start/stop/status for the local web UI |
+| `generate-prep.py` | Auto-generate meeting prep packets from calendar |
+| `generate-followups.py` | Draft follow-up messages for commitments |
+| `background-processor.py` | Process inbox transcripts into drafts |
+| `notify.sh` | Send macOS notifications (direct or scheduled checks) |
+| `install-notifications.sh` | Install notification launchd agents |
+| `uninstall-notifications.sh` | Remove notification agents |
 
 ## Web UI (in web/)
 
