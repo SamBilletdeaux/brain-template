@@ -340,6 +340,38 @@ app.get('/search', (req, res) => {
   });
 });
 
+// Meeting prep
+app.get('/prep', (req, res) => {
+  const prepDir = path.join(opts.brain, 'inbox', 'prep');
+  let prepsHtml = '';
+
+  if (fs.existsSync(prepDir)) {
+    const files = fs.readdirSync(prepDir)
+      .filter(f => f.endsWith('.md'))
+      .sort()
+      .reverse();
+
+    if (files.length > 0) {
+      prepsHtml = files.map(f => {
+        const doc = readMarkdownFile(path.join(prepDir, f));
+        return `<div class="timeline-entry">
+          <div class="prep-filename">${f.replace('.md', '')}</div>
+          ${doc.html}
+        </div>`;
+      }).join('\n');
+    }
+  }
+
+  if (!prepsHtml) {
+    prepsHtml = '<p class="empty">No prep packets generated yet. Run: <code>python3 scripts/generate-prep.py ~/brain</code></p>';
+  }
+
+  render(res, 'prep.html', {
+    title: 'Meeting Prep',
+    preps: prepsHtml,
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Start server
 // ---------------------------------------------------------------------------
