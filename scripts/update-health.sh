@@ -95,7 +95,7 @@ NEW_LATEST="## Latest Run
 
 - **Date**: $DATE
 - **Meetings processed**: $MEETINGS
-- **Transcript volume**: ~${WORDS} words
+- **Transcript volume**: ${WORDS} words
 - **Processing mode**: $MODE
 - **Decisions made**: $TOTAL_DECISIONS (🟢: $D_GREEN, 🟡: $D_YELLOW, 🔴: $D_RED)
 - **Corrections received**: $CORRECTIONS
@@ -108,7 +108,7 @@ NEW_LATEST="## Latest Run
 - **Consecutive days run**: $CONSECUTIVE"
 
 # Build the new history row
-NEW_ROW="| $DATE | $MEETINGS | ~${WORDS} | $MODE | $TOTAL_DECISIONS ($D_GREEN/$D_YELLOW/$D_RED) | $CORRECTIONS | $ACTIVE_THREADS/$DORMANT_THREADS | $PEOPLE_COUNT | $PREF_RULES |"
+NEW_ROW="| $DATE | $MEETINGS | ${WORDS} | $MODE | $TOTAL_DECISIONS ($D_GREEN/$D_YELLOW/$D_RED) | $CORRECTIONS | $ACTIVE_THREADS/$DORMANT_THREADS | $PEOPLE_COUNT | $PREF_RULES |"
 
 # Check if today's entry already exists (idempotent)
 if grep -q "| $DATE |" "$HEALTH_FILE"; then
