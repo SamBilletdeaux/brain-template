@@ -438,6 +438,53 @@ app.get('/follow-ups', (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
+// Integrations
+// ---------------------------------------------------------------------------
+
+// Slack
+const { createSlackApp } = require('./integrations/slack');
+const slackApp = createSlackApp(opts.brain, db, renderMarkdown);
+if (slackApp) {
+  slackApp.start().then(() => {
+    console.log('Slack: connected');
+  }).catch(err => {
+    console.log(`Slack: failed to start — ${err.message}`);
+  });
+}
+
+// Inbox API (used by browser extension and other integrations)
+app.use(express.json());
+
+app.post('/api/inbox', (req, res) => {
+  const { source, title, content, url, note } = req.body;
+
+  if (!content && !note) {
+    return res.status(400).json({ error: 'content or note required' });
+  }
+
+  const sourceDir = source || 'web';
+  const inboxDir = path.join(opts.brain, 'inbox', sourceDir);
+  fs.mkdirSync(inboxDir, { recursive: true });
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const slug = (title || 'capture').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40);
+  const filename = `${timestamp}-${slug}.md`;
+
+  const lines = ['---'];
+  if (source) lines.push(`source: ${source}`);
+  if (title) lines.push(`title: ${title}`);
+  if (url) lines.push(`url: ${url}`);
+  lines.push(`captured_at: ${new Date().toISOString()}`);
+  lines.push('---', '');
+  if (content) lines.push(content);
+  if (note) lines.push('', `> ${note}`);
+
+  fs.writeFileSync(path.join(inboxDir, filename), lines.join('\n'));
+
+  res.json({ ok: true, file: filename });
+});
+
+// ---------------------------------------------------------------------------
 // Start server
 // ---------------------------------------------------------------------------
 
