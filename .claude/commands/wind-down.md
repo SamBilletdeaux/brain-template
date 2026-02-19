@@ -53,6 +53,24 @@ Check for issues before doing any heavy processing:
 
 ### 0c. Extract Meetings from Configured Sources
 
+**Check the inbox first.** The inbox (`inbox/` in brain root) is the primary input layer. Snapshots from the transcript daemon and manual uploads land here automatically.
+
+**Step 1: Check inbox/granola/ for pre-snapshotted transcripts**
+- List all date directories in `inbox/granola/` that haven't been processed yet
+- A date directory is "unprocessed" if it's NOT in `inbox/.processed/`
+- For each unprocessed directory, read the JSON files inside — each is one meeting with title, attendees, transcript text, and metadata already extracted
+- This handles today AND any missed days (catch-up processing)
+
+**Step 2: Check inbox/notes/ for quick-capture notes**
+- List any `.md` files in `inbox/notes/`
+- These are user-captured thoughts to route to appropriate threads during processing
+
+**Step 3: Check inbox/files/ for manually uploaded transcripts**
+- List any files dropped here (via file picker or manual copy)
+
+**Step 4: Fall back to live Granola cache (if inbox is empty for today)**
+If no snapshot exists for today in `inbox/granola/`, fall back to reading the cache directly:
+
 Iterate through each data source listed in `config.md`. For each source:
 
 **Granola** (type: `granola`):
@@ -64,7 +82,7 @@ state.transcripts (dict of transcript arrays, keyed by document ID)
 Filter documents to find today's meetings (by `created_at` date). For each meeting, extract:
 - Title, attendees (from `google_calendar_event.attendees`), start/end time
 - Transcript availability (check if `state.transcripts[document_id]` exists and is non-empty)
-**CRITICAL**: Granola only keeps transcripts in cache for ~1 day. If transcripts are empty, warn the user immediately.
+**CRITICAL**: Granola only keeps transcripts in cache for ~1 day. If transcripts are empty, warn the user immediately. Consider running `scripts/snapshot-transcripts.sh` to salvage what's still available.
 
 **File-based sources** (type: `otter`, `fireflies`, or other export-based tools):
 Check the export path from config.md for new files dated today. List any found.
@@ -419,6 +437,12 @@ When the user says "commit" (or equivalent approval):
 5. `handoff.md` — **Idempotent**: If today's entry already exists, replace it in place. If not, prepend new entry at top.
 6. `preferences.md` (append any new rules from this session's corrections)
 7. `health.md` — **Idempotent**: Use `scripts/update-health.sh` which handles both insert and update for the same date.
+
+### Mark Inbox Items as Processed
+After writing all files, move processed inbox items so they aren't re-processed:
+- For each date directory processed from `inbox/granola/`, create a marker: `mkdir -p inbox/.processed && touch inbox/.processed/YYYY-MM-DD`
+- For each note processed from `inbox/notes/`, move it: `mv inbox/notes/[file] inbox/.processed/`
+- For each file processed from `inbox/files/`, move it: `mv inbox/files/[file] inbox/.processed/`
 
 ### Git Commit
 ```bash
