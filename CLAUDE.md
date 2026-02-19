@@ -40,6 +40,7 @@ A personal knowledge system that processes meeting transcripts into living docum
 | `notify.sh` | Send macOS notifications (direct or scheduled checks) |
 | `install-notifications.sh` | Install notification launchd agents |
 | `uninstall-notifications.sh` | Remove notification agents |
+| `auto-trim.sh` | Auto-archive old handoff/health/commitments/inbox data |
 
 ## Web UI (in web/)
 
@@ -142,6 +143,16 @@ During `/wind-down`:
 - **First template sync fails?** Use `git merge template/master --allow-unrelated-histories`
 - **Large Zoom transcripts?** May exceed token limits — read in chunks or preprocess
 - **Granola transcripts missing?** Cache only holds ~1 day — install the daemon (`./scripts/install-daemon.sh`) to auto-snapshot every 30 min
+
+## Tests (in tests/)
+
+```bash
+python3 -m pytest tests/ -v              # Python tests (51 tests)
+bash tests/test_auto_trim.sh             # Auto-trim shell tests (11 assertions)
+bash tests/test_update_health.sh         # Health update shell tests (10 assertions)
+```
+
+Covers: background-processor.py, generate-prep.py, generate-followups.py, auto-trim.sh, update-health.sh
 
 ## Design Principles
 - Threads, not projects (flat > hierarchical)

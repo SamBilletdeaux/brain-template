@@ -2,16 +2,12 @@
 """background-processor.py — Process new transcripts into draft updates.
 
 Watches the inbox for new transcript snapshots and generates draft
-summaries, entity extractions, and proposed changes for review.
-
-When an Anthropic API key is available, uses Claude for intelligent
-summarization. Without one, falls back to rule-based extraction.
+entity extractions (people, threads, action patterns, decisions) for
+review during /wind-down. All AI-powered analysis happens in Claude Code
+during the wind-down session itself — this script just pre-indexes.
 
 Usage:
     python3 scripts/background-processor.py <brain-root> [--once] [--watch-interval 60]
-
-Environment:
-    ANTHROPIC_API_KEY — enables AI-powered summarization (optional)
 """
 
 import hashlib
@@ -21,7 +17,6 @@ import re
 import sys
 import time
 from datetime import datetime
-from pathlib import Path
 from typing import Dict, List, Optional
 
 
@@ -154,68 +149,6 @@ def rule_based_summary(title: str, transcript: str, attendees: List[str],
     }
 
 
-def ai_summary(title: str, transcript: str, attendees: List[str],
-               known_people: Dict[str, str], known_threads: List[str],
-               api_key: str) -> Optional[dict]:
-    """Generate an AI-powered summary using Claude API."""
-    try:
-        import anthropic
-    except ImportError:
-        print("  anthropic package not installed, falling back to rule-based")
-        return None
-
-    people_context = ', '.join(set(known_people.values()))
-    threads_context = ', '.join(known_threads)
-
-    # Truncate transcript if too long (keep under ~50k tokens)
-    max_chars = 150000
-    if len(transcript) > max_chars:
-        transcript = transcript[:max_chars] + "\n\n[...transcript truncated...]"
-
-    prompt = f"""Analyze this meeting transcript and extract structured information.
-
-Meeting: {title}
-Attendees: {', '.join(attendees) if attendees else 'unknown'}
-Known people in the system: {people_context}
-Known topic threads: {threads_context}
-
-Transcript:
-{transcript}
-
-Return a JSON object with these fields:
-- "summary": 2-3 sentence summary of the meeting
-- "key_decisions": list of decisions made (each with "decision" text and "confidence" as green/yellow/red)
-- "action_items": list of action items (each with "item" text, "owner" if identifiable, "confidence")
-- "mentioned_people": list of people mentioned (use display names from the known people list when possible)
-- "mentioned_threads": list of topic threads this meeting relates to (from the known threads list)
-- "new_thread_candidates": list of topics discussed that don't match existing threads (potential new threads)
-- "thread_updates": for each mentioned thread, what new information should be added
-
-Return ONLY the JSON, no other text."""
-
-    client = anthropic.Anthropic(api_key=api_key)
-    try:
-        message = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=2000,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        response_text = message.content[0].text
-
-        # Parse JSON from response
-        json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
-        if json_match:
-            result = json.loads(json_match.group())
-            result['method'] = 'ai'
-            result['title'] = title
-            result['attendees'] = attendees
-            return result
-    except Exception as e:
-        print(f"  AI summary failed: {e}")
-
-    return None
-
-
 def generate_draft_file(summary: dict, source_file: str, brain_root: str) -> str:
     """Generate a draft markdown file from a summary."""
     lines = [
@@ -232,15 +165,6 @@ def generate_draft_file(summary: dict, source_file: str, brain_root: str) -> str
         lines.append("")
 
     lines.extend(["---", ""])
-
-    # AI-generated summary
-    if summary.get('summary'):
-        lines.extend([
-            "## Summary",
-            "",
-            summary['summary'],
-            "",
-        ])
 
     # Mentioned people
     if summary.get('mentioned_people'):
@@ -263,65 +187,18 @@ def generate_draft_file(summary: dict, source_file: str, brain_root: str) -> str
         lines.append("")
 
     # Decisions
-    decisions = summary.get('key_decisions') or summary.get('potential_decisions', [])
-    if decisions:
-        lines.extend([
-            "## Decisions",
-            "",
-        ])
-        for d in decisions:
-            if isinstance(d, dict):
-                conf = d.get('confidence', 'yellow')
-                emoji = {'green': '\U0001f7e2', 'yellow': '\U0001f7e1', 'red': '\U0001f534'}.get(conf, '\U0001f7e1')
-                lines.append(f"- {emoji} {d.get('decision', d.get('item', str(d)))}")
-            else:
-                lines.append(f"- \U0001f7e1 {d}")
+    if summary.get('potential_decisions'):
+        lines.extend(["## Potential Decisions", ""])
+        for d in summary['potential_decisions']:
+            lines.append(f"- {d}")
         lines.append("")
 
     # Action items
-    actions = summary.get('action_items') or summary.get('potential_actions', [])
-    if actions:
-        lines.extend([
-            "## Potential Action Items",
-            "",
-        ])
-        for a in actions:
-            if isinstance(a, dict):
-                owner = f" — @{a['owner']}" if a.get('owner') else ""
-                lines.append(f"- [ ] {a.get('item', str(a))}{owner}")
-            else:
-                lines.append(f"- [ ] {a}")
+    if summary.get('potential_actions'):
+        lines.extend(["## Potential Action Items", ""])
+        for a in summary['potential_actions']:
+            lines.append(f"- [ ] {a}")
         lines.append("")
-
-    # New thread candidates (AI only)
-    if summary.get('new_thread_candidates'):
-        lines.extend([
-            "## Possible New Threads",
-            "",
-        ])
-        for t in summary['new_thread_candidates']:
-            lines.append(f"- {t}")
-        lines.append("")
-
-    # Thread updates (AI only)
-    if summary.get('thread_updates'):
-        lines.extend([
-            "## Proposed Thread Updates",
-            "",
-        ])
-        if isinstance(summary['thread_updates'], dict):
-            for thread, update in summary['thread_updates'].items():
-                lines.append(f"### [[{thread}]]")
-                lines.append(f"{update}")
-                lines.append("")
-        elif isinstance(summary['thread_updates'], list):
-            for update in summary['thread_updates']:
-                if isinstance(update, dict):
-                    thread = update.get('thread', 'unknown')
-                    text = update.get('update', str(update))
-                    lines.append(f"### [[{thread}]]")
-                    lines.append(f"{text}")
-                    lines.append("")
 
     lines.extend([
         "---",
@@ -332,8 +209,7 @@ def generate_draft_file(summary: dict, source_file: str, brain_root: str) -> str
 
 
 def process_snapshot(snapshot_path: str, brain_root: str,
-                     known_people: Dict[str, str], known_threads: List[str],
-                     api_key: Optional[str]) -> Optional[str]:
+                     known_people: Dict[str, str], known_threads: List[str]) -> Optional[str]:
     """Process a single transcript snapshot into a draft."""
     try:
         with open(snapshot_path, 'r') as f:
@@ -355,16 +231,8 @@ def process_snapshot(snapshot_path: str, brain_root: str,
         if not a.get('self') and name:
             attendees.append(name)
 
-    # Try AI summary first, fall back to rule-based
-    summary = None
-    if api_key:
-        print(f"  Using AI for: {title}")
-        summary = ai_summary(title, transcript, attendees,
-                            known_people, known_threads, api_key)
-
-    if not summary:
-        summary = rule_based_summary(title, transcript, attendees,
-                                     known_people, known_threads)
+    summary = rule_based_summary(title, transcript, attendees,
+                                 known_people, known_threads)
 
     # Generate draft file
     drafts_dir = os.path.join(brain_root, 'inbox', 'drafts')
@@ -383,7 +251,7 @@ def process_snapshot(snapshot_path: str, brain_root: str,
     return filename
 
 
-def scan_and_process(brain_root: str, api_key: Optional[str], limit: int = 0):
+def scan_and_process(brain_root: str, limit: int = 0):
     """Scan inbox for unprocessed snapshots and process them."""
     granola_dir = os.path.join(brain_root, 'inbox', 'granola')
     if not os.path.isdir(granola_dir):
@@ -409,7 +277,7 @@ def scan_and_process(brain_root: str, api_key: Optional[str], limit: int = 0):
 
         fname = os.path.basename(fpath)
         print(f"Processing: {fname}")
-        result = process_snapshot(fpath, brain_root, known_people, known_threads, api_key)
+        result = process_snapshot(fpath, brain_root, known_people, known_threads)
 
         if result:
             print(f"  → {result}")
@@ -431,7 +299,6 @@ def main():
         sys.exit(1)
 
     brain_root = os.path.expanduser(sys.argv[1])
-    api_key = os.environ.get('ANTHROPIC_API_KEY')
 
     once = '--once' in sys.argv
     watch_interval = 60  # seconds
@@ -440,19 +307,16 @@ def main():
         if arg == '--watch-interval' and i + 1 < len(sys.argv):
             watch_interval = int(sys.argv[i + 1])
 
-    if api_key:
-        print("Anthropic API key found — AI summaries enabled")
-    else:
-        print("No ANTHROPIC_API_KEY — using rule-based extraction")
+    print("Rule-based entity extraction (AI analysis happens in /wind-down)")
 
     if once:
-        count = scan_and_process(brain_root, api_key)
+        count = scan_and_process(brain_root)
         print(f"\nProcessed {count} new transcript(s)")
     else:
         print(f"Watching for new transcripts (every {watch_interval}s)...")
         print("Press Ctrl+C to stop")
         while True:
-            count = scan_and_process(brain_root, api_key)
+            count = scan_and_process(brain_root)
             if count > 0:
                 print(f"Processed {count} new transcript(s)")
                 # Send notification

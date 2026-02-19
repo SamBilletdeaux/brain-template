@@ -32,21 +32,13 @@ HOW-IT-WORKS.md explains things at the right level for a non-engineer. CLAUDE.md
 
 ## What's Going to Break
 
-### 1. handoff.md will become unreadable in 3 months
+### 1. ~~handoff.md will become unreadable in 3 months~~ RESOLVED
 
-**The problem**: Every wind-down prepends a new entry. After 60 working days, this file will be 60+ entries long. The wake-up command reads "the most recent entry, ideally last 2-3 days" — but Claude still has to load the whole file to find where those entries are. By month 6, this file could be 50KB+ and consume significant context window.
+**Resolution**: `scripts/auto-trim.sh` now runs automatically during every wind-down. Keeps handoff.md to 14 entries (archives older to `archive/handoffs/YYYY-QN.md`), trims health.md to 30 rows, archives completed commitments >30 days, and cleans up old inbox files. No manual intervention needed.
 
-**archive.sh exists but isn't automated.** It requires manual runs and isn't integrated into any scheduled process. You will forget to run it. Guaranteed.
+### 2. ~~The background processor's rule-based mode is nearly useless~~ RESOLVED
 
-**Fix needed**: Either auto-archive during wind-down (if file exceeds a size threshold), or restructure handoff.md to use separate files per week/month (like `handoff/2026-W08.md`).
-
-### 2. The background processor's rule-based mode is nearly useless
-
-**The problem**: Without an Anthropic API key, the background processor falls back to regex-based extraction. We tested it — it extracted action items like "will do." and "will be helpful." These are noise, not signal. The entity matching (finding people and threads) is decent, but the actual summarization and decision extraction is too crude to be useful.
-
-**This matters because**: The whole Phase 5 vision — "wind-down becomes reviewing what the system already prepared" — depends on the background processor generating useful drafts. Without the AI layer, it generates junk that's harder to review than raw transcripts.
-
-**Fix needed**: Either commit to using the Claude API (which means managing API costs — a full transcript can be $0.10-0.50 per meeting), or significantly improve the rule-based extraction with better NLP heuristics, or honestly just remove the rule-based fallback and make the API key required for this feature.
+**Resolution**: Stripped the AI mode entirely. The background processor is now purely a pre-indexer — it extracts entities (people, threads) and pattern-matches action/decision language. All real AI analysis happens in Claude Code during /wind-down. No API key needed. The action item extraction is still noisy, but that's acceptable for a pre-index — wind-down reviews the raw transcripts with full AI capability.
 
 ### 3. The search index doesn't know about inbox content
 
@@ -202,8 +194,8 @@ The preferences.md template has placeholder sections but no real examples of goo
 
 If I had to fix things in order of impact:
 
-1. **Auto-archive for handoff.md** — prevents the inevitable growth problem
-2. **Test suite for data-integrity scripts** — prevents silent corruption
+1. ~~**Auto-archive for handoff.md**~~ DONE — auto-trim.sh runs in every wind-down
+2. **Test suite for data-integrity scripts** — prevents silent corruption (IN PROGRESS)
 3. **Lock file for concurrent sessions** — prevents data loss
 4. **Make /setup comprehensive** — prevents broken installations
 5. **Abstract calendar source** — removes Granola single point of failure
@@ -221,6 +213,6 @@ This system is at the "impressive prototype" stage, not the "reliable daily tool
 
 The biggest risk isn't a specific bug — it's the slow accumulation of entropy. Files getting too long, preferences contradicting each other, the search index drifting out of sync, background processes silently failing. The system has no immune system against entropy. Adding one is the most important thing you can do next.
 
-The second biggest risk is abandonment. The system requires daily engagement (wind-down) to stay useful. Miss a week and transcripts are gone, context is stale, and the activation energy to catch up is high. The daemon helps, but the processing step is still manual. The background processor (with API key) would close this gap significantly.
+The second biggest risk is abandonment. The system requires daily engagement (wind-down) to stay useful. Miss a week and transcripts are gone, context is stale, and the activation energy to catch up is high. The daemon captures transcripts, and the background processor pre-indexes entities, but the actual AI processing step (wind-down) is still manual and requires a Claude Code session.
 
 Build the immune system, then stress-test it with real daily use. That's where the real learning happens.

@@ -202,9 +202,9 @@ The system doesn't just wait for you to ask — it watches, prepares, and nudges
 **How**: Shell script using `osascript` for native macOS notifications. Three launchd agents run on schedule. Install with `install-notifications.sh`.
 
 ### Background Processor (background-processor.py)
-**What**: Watches the inbox for new transcript snapshots and auto-generates draft summaries with extracted entities, potential action items, and related threads.
-**Why**: Wind-down used to mean waiting while Claude processed transcripts from scratch. Now the background processor pre-digests transcripts as they arrive. Wind-down becomes: review what the system already prepared.
-**How**: Scans `inbox/granola/` recursively, processes each transcript (AI-powered if `ANTHROPIC_API_KEY` is set, rule-based otherwise), writes drafts to `inbox/drafts/`. Run with `--once` or in continuous watch mode.
+**What**: Watches the inbox for new transcript snapshots and pre-indexes entity extractions (people, threads, action patterns, decisions) into draft files.
+**Why**: Pre-digests transcripts as they arrive so wind-down has a head start on entity matching. All actual AI analysis happens in Claude Code during /wind-down — this script handles the mechanical pattern-matching.
+**How**: Scans `inbox/granola/` recursively, runs rule-based extraction (people matching, thread matching, action/decision regex), writes drafts to `inbox/drafts/`. Run with `--once` or in continuous watch mode. No API key required.
 
 ### Follow-Up Drafts (generate-followups.py)
 **What**: Detects commitments that look like "send X to Y" or "share X with Y" and generates draft message skeletons with context.
