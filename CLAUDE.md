@@ -32,6 +32,19 @@ A personal knowledge system that processes meeting transcripts into living docum
 | `query-graph.py` | Query entity relationships (connections, timelines) |
 | `schema.sql` | SQLite schema for the search index |
 | `install-hooks.sh` | Install git post-commit hook for auto-indexing |
+| `brain-server.sh` | Start/stop/status for the local web UI |
+
+## Web UI (in web/)
+
+A local web app for browsing your brain in a browser. Not deployed — runs on `localhost:3141`.
+
+```bash
+./scripts/brain-server.sh start ~/brain    # Start and open browser
+./scripts/brain-server.sh stop             # Stop the server
+./scripts/brain-server.sh status           # Check if running
+```
+
+Pages: Dashboard (`/`), Timeline (`/timeline`), Search (`/search`), Thread detail (`/thread/:name`), Person detail (`/person/:name`)
 
 ### extract-granola.sh usage:
 ```bash
@@ -63,6 +76,7 @@ brain/
 │   ├── notes/          # Quick captures
 │   ├── files/          # Manual uploads
 │   └── .processed/     # Processed item markers
+├── web/                # Local web UI (Express + SQLite)
 ├── .brain.db           # SQLite search index (gitignored, rebuildable)
 ├── config.md           # User identity and data sources
 ├── preferences.md      # Learned rules from corrections

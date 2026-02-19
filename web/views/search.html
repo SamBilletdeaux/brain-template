@@ -1,0 +1,10 @@
+<h1>Search</h1>
+
+<form action="/search" method="get" class="search-form">
+  <input type="text" name="q" value="{{query}}" placeholder="Search your brain..." autofocus>
+  <button type="submit">Search</button>
+</form>
+
+<div class="search-results">
+  {{results}}
+</div>

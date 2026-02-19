@@ -187,6 +187,38 @@ Commands:
 
 ---
 
+## The Web UI
+
+**What**: A local web app that lets you browse your entire brain in a browser at `http://localhost:3141`. Not deployed anywhere — it runs on your machine, reading your local files and search index.
+
+**Why**: The terminal is great for running commands, but bad for browsing. If you want to see all your threads at a glance, read a person's full context, or search across everything — the web UI is faster and more natural than running CLI commands. It's a read-only view of the same files you already have.
+
+### Pages
+
+| Page | URL | What it shows |
+|------|-----|---------------|
+| Dashboard | `/` | Overview of everything: threads, people, open commitments, health stats |
+| Timeline | `/timeline` | Handoff entries in chronological order — your daily log as a readable feed |
+| Search | `/search` | Full-text search powered by the SQLite index. Finds matches across all files |
+| Thread detail | `/thread/:name` | A single thread file rendered as HTML with clickable wiki-links |
+| Person detail | `/person/:name` | A single person file rendered as HTML |
+
+### How to run it
+
+```bash
+./scripts/brain-server.sh start ~/brain    # Start server and open browser
+./scripts/brain-server.sh stop             # Stop the server
+./scripts/brain-server.sh status           # Check if running
+```
+
+The server reads your markdown files live on each request — no caching, no stale data. If you update a thread file and refresh the page, you see the new version immediately. Search queries go against the SQLite index (`.brain.db`), which stays up to date via the git hook.
+
+### brain-server.sh
+**What**: A start/stop/status script for the web server.
+**Why**: Lets you treat the web UI like a service — start it once, forget about it, stop it when you're done. On macOS it automatically opens your browser when starting.
+
+---
+
 ## How the Pieces Connect
 
 ```
@@ -213,6 +245,8 @@ Next morning, /wake-up reads the updated files
 You can also /search anytime: "what did we decide about X?"
        ↓
 You get a 2-minute briefing before your first meeting
+       ↓
+Or browse everything in the web UI: http://localhost:3141
 ```
 
 Your corrections during wind-down feed back into preferences.md, making the system smarter over time. The whole thing is a learning loop.
