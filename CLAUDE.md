@@ -23,6 +23,10 @@ A personal knowledge system that processes meeting transcripts into living docum
 | `validate-config.sh` | Validate config.md structure and paths |
 | `update-health.sh` | Update health.md metrics (called by wind-down) |
 | `archive.sh` | Archive old handoff entries, completed commitments |
+| `snapshot-transcripts.sh` | Snapshot Granola transcripts to inbox (safety net) |
+| `capture-note.sh` | Quick-capture a thought to inbox for next wind-down |
+| `install-daemon.sh` | Install transcript snapshotter as launchd service |
+| `uninstall-daemon.sh` | Remove transcript snapshotter service |
 
 ### extract-granola.sh usage:
 ```bash
@@ -37,11 +41,23 @@ A personal knowledge system that processes meeting transcripts into living docum
 ./scripts/archive.sh ~/brain --dry-run    # Preview without changes
 ```
 
+### capture-note.sh usage:
+```bash
+./scripts/capture-note.sh "quick thought about the meeting"  # inline
+./scripts/capture-note.sh                                     # opens editor
+# Tip: alias note="~/brain-template/scripts/capture-note.sh"
+```
+
 ## Project Structure
 ```
 brain/
 ├── .claude/commands/   # Slash command prompts
 ├── scripts/            # Helper scripts
+├── inbox/              # Raw inputs (gitignored)
+│   ├── granola/        # Auto-snapshotted transcripts
+│   ├── notes/          # Quick captures
+│   ├── files/          # Manual uploads
+│   └── .processed/     # Processed item markers
 ├── config.md           # User identity and data sources
 ├── preferences.md      # Learned rules from corrections
 ├── handoff.md          # Rolling daily log
@@ -83,7 +99,7 @@ During `/wind-down`:
 - **Slash commands not working?** Restart the Claude Code session after adding new commands to `.claude/commands/`
 - **First template sync fails?** Use `git merge template/master --allow-unrelated-histories`
 - **Large Zoom transcripts?** May exceed token limits — read in chunks or preprocess
-- **Granola transcripts missing?** Cache only holds ~1 day — run `/wind-down` same day
+- **Granola transcripts missing?** Cache only holds ~1 day — install the daemon (`./scripts/install-daemon.sh`) to auto-snapshot every 30 min
 
 ## Design Principles
 - Threads, not projects (flat > hierarchical)
