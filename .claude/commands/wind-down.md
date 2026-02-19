@@ -444,6 +444,13 @@ After writing all files, move processed inbox items so they aren't re-processed:
 - For each note processed from `inbox/notes/`, move it: `mv inbox/notes/[file] inbox/.processed/`
 - For each file processed from `inbox/files/`, move it: `mv inbox/files/[file] inbox/.processed/`
 
+### Auto-Trim
+Run the auto-trim script to keep files bounded:
+```bash
+./scripts/auto-trim.sh [brain-root]
+```
+This silently archives old handoff entries (keeps last 14), trims health.md history (keeps last 30 rows), archives completed commitments older than 30 days, and cleans up old inbox prep/drafts/markers. If nothing needs trimming, it does nothing. Include any trimmed files in the git commit.
+
 ### Git Commit
 ```bash
 cd [brain-root] && git add -A && git commit -m "wind-down: YYYY-MM-DD - [brief summary of key outcomes]"
