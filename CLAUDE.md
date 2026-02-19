@@ -13,6 +13,7 @@ A personal knowledge system that processes meeting transcripts into living docum
 | `/pick-files` | Open native macOS file picker |
 | `/sync-template` | Pull latest template updates into private brain |
 | `/doctor` | System health check — validates config, links, staleness |
+| `/search` | Full-text search across all brain files and relationships |
 
 ## Helper Scripts (in scripts/)
 
@@ -27,6 +28,10 @@ A personal knowledge system that processes meeting transcripts into living docum
 | `capture-note.sh` | Quick-capture a thought to inbox for next wind-down |
 | `install-daemon.sh` | Install transcript snapshotter as launchd service |
 | `uninstall-daemon.sh` | Remove transcript snapshotter service |
+| `indexer.py` | Build/update SQLite search index from markdown files |
+| `query-graph.py` | Query entity relationships (connections, timelines) |
+| `schema.sql` | SQLite schema for the search index |
+| `install-hooks.sh` | Install git post-commit hook for auto-indexing |
 
 ### extract-granola.sh usage:
 ```bash
@@ -58,6 +63,7 @@ brain/
 │   ├── notes/          # Quick captures
 │   ├── files/          # Manual uploads
 │   └── .processed/     # Processed item markers
+├── .brain.db           # SQLite search index (gitignored, rebuildable)
 ├── config.md           # User identity and data sources
 ├── preferences.md      # Learned rules from corrections
 ├── handoff.md          # Rolling daily log

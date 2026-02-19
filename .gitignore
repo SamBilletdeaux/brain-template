@@ -12,4 +12,9 @@ Thumbs.db
 # Inbox — raw data, not committed (snapshotted transcripts, uploads, notes)
 inbox/
 
+# Search index — derived from markdown files, rebuildable
+.brain.db
+.brain.db-wal
+.brain.db-shm
+
 # Don't ignore any markdown files — they're the whole point

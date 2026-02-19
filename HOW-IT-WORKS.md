@@ -143,6 +143,50 @@ Wind-down reads from the inbox first. If nothing is there for today, it falls ba
 
 ---
 
+## The Search Index
+
+**What**: A SQLite database (`.brain.db`) that mirrors everything in your markdown files but makes it searchable and queryable instantly.
+
+**Why**: Markdown files are great for reading and editing, but terrible for answering questions like "what did I discuss with Wei about the content agent last month?" Searching across 20+ files manually is painful. The search index lets you ask questions like that and get answers in seconds.
+
+**How it works**: The indexer reads every markdown file and extracts three things:
+1. **Documents** — the files themselves, with content hashes so it only re-processes what changed
+2. **Entities** — the important things: people, threads, meetings, commitments. Each one becomes a searchable record.
+3. **Relationships** — the connections between entities. "This meeting discussed this thread." "This person is connected to this thread." These form a graph you can traverse.
+
+The search uses FTS5 (SQLite's full-text search engine), which supports word stemming — so searching "clustering" also finds "clustered" and "clusters."
+
+**Important**: The markdown files are always the source of truth. The database is derived and can be rebuilt from scratch at any time. If it ever gets corrupted, just delete `.brain.db` and re-run the indexer.
+
+### indexer.py
+**What**: The script that builds and updates the search index.
+**Why**: Reads all your markdown files, extracts entities and relationships, and populates the database. Runs incrementally — if only one file changed, it only re-indexes that file. Takes less than a second for typical brains.
+
+### query-graph.py
+**What**: A command-line tool for querying the relationship graph directly.
+**Why**: Sometimes you want to ask structural questions: "what threads is Simone connected to?" or "which meetings discussed AISP?" This tool traverses the graph and gives you answers without reading files manually.
+
+Commands:
+- `query-graph.py ~/brain stats` — overview of your brain's size and connectivity
+- `query-graph.py ~/brain thread "AISP"` — everything about a thread: related threads, meetings, people
+- `query-graph.py ~/brain person "Simone"` — everything about a person: their threads, meetings, context
+- `query-graph.py ~/brain connections "Content Agent"` — all entities connected to something
+- `query-graph.py ~/brain timeline "AISP"` — chronological mentions across all files
+
+### schema.sql
+**What**: The database structure definition.
+**Why**: Defines the tables, indexes, and full-text search configuration. If you ever need to rebuild the database, this is the blueprint.
+
+### /search
+**What**: A Claude Code command that lets you ask questions about your brain in natural language.
+**Why**: Instead of remembering SQL queries or graph commands, you just ask: "What did I discuss with Wei about the content agent?" The search command translates your question into database queries, finds the relevant files, and presents a clear answer with sources.
+
+### install-hooks.sh
+**What**: Installs a git hook that automatically re-indexes your brain after every commit.
+**Why**: Without this, the search index can get out of date. With the hook installed, every time wind-down commits changes, the index updates automatically in the background. You never have to think about it.
+
+---
+
 ## How the Pieces Connect
 
 ```
@@ -162,7 +206,11 @@ Files updated: threads, people, commitments, handoff, health
        ↓
 Git commits everything
        ↓
+Git hook auto-updates the search index
+       ↓
 Next morning, /wake-up reads the updated files
+       ↓
+You can also /search anytime: "what did we decide about X?"
        ↓
 You get a 2-minute briefing before your first meeting
 ```
