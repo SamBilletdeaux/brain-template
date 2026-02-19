@@ -32,6 +32,10 @@ Before processing anything, check the system's health and confirm what you're wo
 
 Check for issues before doing any heavy processing:
 
+**Re-run detection:** Check `handoff.md` for an entry dated today. If one exists, this is a re-run:
+- "I see a wind-down entry for today already. I'll **update** the existing entry rather than creating a duplicate. Any new meetings or corrections will be merged in."
+- Continue processing normally — Phase 6 will handle updating in place.
+
 **Gap detection:** Compare today's date against the last wind-down date in health.md. If the gap exceeds the threshold in preferences.md:
 - Check configured data sources for meetings on missed days (transcripts may still be salvageable depending on the source's retention policy)
 - If transcripts found: "Found [N] meetings from [missed dates] still available. Process them too?"
@@ -412,9 +416,9 @@ When the user says "commit" (or equivalent approval):
 2. Thread files (append new entries, update `last_mentioned`, update status)
 3. People files (append to history, update "Current Focus" and "Open Items")
 4. `commitments.md` (add/complete/remove items)
-5. `handoff.md` (prepend new entry at top)
+5. `handoff.md` — **Idempotent**: If today's entry already exists, replace it in place. If not, prepend new entry at top.
 6. `preferences.md` (append any new rules from this session's corrections)
-7. `health.md` (update Latest Run metrics + append row to Run History)
+7. `health.md` — **Idempotent**: Use `scripts/update-health.sh` which handles both insert and update for the same date.
 
 ### Git Commit
 ```bash

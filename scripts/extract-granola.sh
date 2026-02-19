@@ -62,17 +62,18 @@ for doc_id, doc in documents.items():
     if created != target_date:
         continue
 
-    cal = doc.get('google_calendar_event', {})
-    start = cal.get('start', {}).get('dateTime', '')
+    cal = doc.get('google_calendar_event') or {}
+    start_obj = cal.get('start') or {}
+    start = start_obj.get('dateTime', '')
 
     attendees = []
-    for a in cal.get('attendees', []):
+    for a in (cal.get('attendees') or []):
         email = a.get('email', '')
         name = a.get('displayName', email.split('@')[0] if email else '')
         if email and not a.get('self'):
             attendees.append({'email': email, 'name': name})
 
-    trans = transcripts.get(doc_id, [])
+    trans = transcripts.get(doc_id) or []
     has_transcript = len(trans) > 0
     word_count = len(' '.join([t.get('text', '') for t in trans]).split()) if has_transcript else 0
 

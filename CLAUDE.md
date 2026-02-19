@@ -12,6 +12,7 @@ A personal knowledge system that processes meeting transcripts into living docum
 | `/capture` | Extract stable facts from conversation to CLAUDE.md |
 | `/pick-files` | Open native macOS file picker |
 | `/sync-template` | Pull latest template updates into private brain |
+| `/doctor` | System health check — validates config, links, staleness |
 
 ## Helper Scripts (in scripts/)
 
@@ -19,12 +20,21 @@ A personal knowledge system that processes meeting transcripts into living docum
 |--------|---------|
 | `pick-files.sh` | Native macOS file picker, returns selected paths |
 | `extract-granola.sh` | Parse Granola cache, list meetings by date |
+| `validate-config.sh` | Validate config.md structure and paths |
+| `update-health.sh` | Update health.md metrics (called by wind-down) |
+| `archive.sh` | Archive old handoff entries, completed commitments |
 
 ### extract-granola.sh usage:
 ```bash
 ./scripts/extract-granola.sh              # Today's meetings
 ./scripts/extract-granola.sh 2026-02-15   # Specific date
 ./scripts/extract-granola.sh --list-dates # Show available dates
+```
+
+### archive.sh usage:
+```bash
+./scripts/archive.sh ~/brain              # Run archival
+./scripts/archive.sh ~/brain --dry-run    # Preview without changes
 ```
 
 ## Project Structure
