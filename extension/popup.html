@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 320px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      padding: 16px;
+    }
+    h1 {
+      font-size: 14px;
+      margin-bottom: 12px;
+      color: #58a6ff;
+    }
+    label {
+      display: block;
+      font-size: 12px;
+      color: #8b949e;
+      margin-bottom: 4px;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 8px;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 4px;
+      color: #e6edf3;
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+    textarea {
+      height: 80px;
+      resize: vertical;
+      font-family: inherit;
+    }
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #58a6ff;
+    }
+    .url {
+      font-size: 11px;
+      color: #8b949e;
+      margin-bottom: 10px;
+      word-break: break-all;
+    }
+    button {
+      width: 100%;
+      padding: 8px;
+      background: #238636;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover { background: #2ea043; }
+    button:disabled {
+      background: #30363d;
+      cursor: not-allowed;
+    }
+    .status {
+      text-align: center;
+      font-size: 12px;
+      margin-top: 8px;
+      min-height: 16px;
+    }
+    .status.success { color: #3fb950; }
+    .status.error { color: #f85149; }
+    .settings {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #30363d;
+    }
+    .settings summary {
+      font-size: 11px;
+      color: #8b949e;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>Add to Brain</h1>
+
+  <div class="url" id="pageUrl"></div>
+
+  <label for="title">Title</label>
+  <input type="text" id="title" placeholder="Page title">
+
+  <label for="content">Selected text / content</label>
+  <textarea id="content" placeholder="Selected text or paste content here"></textarea>
+
+  <label for="note">Your note</label>
+  <input type="text" id="note" placeholder="Why is this worth remembering?">
+
+  <button id="send">Add to Brain</button>
+  <div class="status" id="status"></div>
+
+  <details class="settings">
+    <summary>Settings</summary>
+    <label for="serverUrl" style="margin-top: 8px;">Server URL</label>
+    <input type="text" id="serverUrl" placeholder="http://localhost:3141">
+  </details>
+
+  <script src="popup.js"></script>
+</body>
+</html>
