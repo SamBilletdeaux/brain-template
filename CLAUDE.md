@@ -35,6 +35,9 @@ A personal knowledge system that processes meeting transcripts into living docum
 | `brain-server.sh` | Start/stop/status for the local web UI |
 | `generate-prep.py` | Auto-generate meeting prep packets from calendar |
 | `auto-trim.sh` | Auto-archive old handoff/health/commitments/inbox data |
+| `check-preferences.sh` | Detect contradictions, duplicates, bloat in preferences.md |
+| `brain-lock.sh` | Session lockfile — acquire, release, check, force-release |
+| `validate-data.sh` | Data consistency checks — links, ordering, duplicates, empty files |
 
 ## Web UI (in web/)
 
@@ -52,8 +55,11 @@ Pages: Dashboard (`/`), Timeline (`/timeline`), Prep (`/prep`), Search (`/search
 
 | Integration | Env Vars Needed | What it does |
 |-------------|----------------|--------------|
-| Slack | `SLACK_BOT_TOKEN`, `SLACK_SIGNING_SECRET` | `/brain` slash command, starred message capture, DM delivery |
-| Email | `BRAIN_EMAIL_HOST`, `BRAIN_EMAIL_USER`, `BRAIN_EMAIL_PASS` | IMAP watcher, forward-to-brain, mailto links |
+| Slack | `SLACK_BOT_TOKEN`, `SLACK_SIGNING_SECRET`, `SLACK_APP_TOKEN` | `/brain` slash command, starred message capture, DM delivery |
+| Email | `BRAIN_EMAIL_HOST`, `BRAIN_EMAIL_USER`, `BRAIN_EMAIL_PASS` | IMAP watcher, forward-to-brain |
+| Granola MCP | (none — uses MCP protocol) | Meeting search and transcript download |
+
+See `docs/INTEGRATIONS.md` for detailed setup guides.
 
 ### extract-granola.sh usage:
 ```bash
@@ -86,6 +92,7 @@ brain/
 │   ├── files/          # Manual uploads
 │   └── .processed/     # Processed item markers
 ├── web/                # Local web UI (Express + SQLite + integrations)
+├── docs/               # Setup guides (INTEGRATIONS.md)
 ├── .brain.db           # SQLite search index (gitignored, rebuildable)
 ├── config.md           # User identity and data sources
 ├── preferences.md      # Learned rules from corrections
@@ -128,17 +135,25 @@ During `/wind-down`:
 - **Slash commands not working?** Restart the Claude Code session after adding new commands to `.claude/commands/`
 - **First template sync fails?** Use `git merge template/master --allow-unrelated-histories`
 - **Large Zoom transcripts?** May exceed token limits — read in chunks or preprocess
-- **Granola transcripts missing?** Cache only holds ~1 day — install the daemon (`./scripts/install-daemon.sh`) to auto-snapshot every 30 min
+- **Granola transcripts missing?** Cache only holds ~1 day — install the daemon (`./scripts/install-daemon.sh`) to auto-snapshot every 30 min, or install Granola MCP for reliable API access
+- **Wind-down interrupted?** Checkpoint recovery will offer to resume on next run. Delete `.wind-down-checkpoint.json` to force a fresh start.
+- **Stale lockfile?** Run `./scripts/brain-lock.sh force-release ~/brain` if a lock persists after a crash
+- **Preference conflicts?** Run `./scripts/check-preferences.sh ~/brain` to detect contradictions and duplicates
+- **MCP tools unavailable?** Wind-down/wake-up automatically fall back to cache. Run `claude mcp list` to check registration.
 
 ## Tests (in tests/)
 
 ```bash
-python3 -m pytest tests/ -v              # Python tests
+python3 -m pytest tests/ -v              # Python tests (19 tests)
 bash tests/test_auto_trim.sh             # Auto-trim shell tests (11 assertions)
 bash tests/test_update_health.sh         # Health update shell tests (10 assertions)
+bash tests/test_check_preferences.sh     # Preference conflict tests (7 assertions)
+bash tests/test_brain_lock.sh            # Session lockfile tests (10 assertions)
+bash tests/test_validate_data.sh         # Data validation tests (9 assertions)
+node tests/test_integrations.js          # Integration module tests (10 assertions)
 ```
 
-Covers: generate-prep.py, auto-trim.sh, update-health.sh
+Covers: generate-prep.py, auto-trim.sh, update-health.sh, check-preferences.sh, brain-lock.sh, validate-data.sh, slack.js, email.js
 
 ## Design Principles
 - Threads, not projects (flat > hierarchical)
@@ -146,3 +161,4 @@ Covers: generate-prep.py, auto-trim.sh, update-health.sh
 - Learning through corrections, not upfront config
 - Portable by design (just markdown + git)
 - Two-repo separation: code is public, data is private
+- Self-healing: the system detects and reports its own degradation

@@ -269,13 +269,47 @@ Your corrections during wind-down feed back into preferences.md, making the syst
 
 Each integration is optional and independent. They extend the brain to where work actually happens.
 
+### Granola MCP (preferred for meeting data)
+**What**: An MCP server that provides direct API access to Granola's meeting data — search, transcript download, notes.
+**Why**: The local cache (`cache-v3.json`) only holds transcripts for ~1 day and requires brittle JSON parsing. The MCP server uses Granola's actual API, which is more reliable and has no expiration window.
+**How**: Installed via `claude mcp add`. Wind-down and wake-up automatically try MCP first, falling back to cache if unavailable.
+
 ### Slack Bot (web/integrations/slack.js)
 **What**: A Slack bot that lets you interact with your brain from Slack — search, get status, view meeting prep. Also captures starred messages to your inbox automatically.
 **Why**: You're already in Slack all day. Being able to `/brain search AISP` without switching to a terminal saves context switches. Starred messages become a natural "save this for later" gesture that actually works.
-**How**: Uses @slack/bolt with Socket Mode (no public URL needed). Set `SLACK_BOT_TOKEN` and `SLACK_SIGNING_SECRET` env vars.
+**How**: Uses @slack/bolt with Socket Mode (required — no HTTP fallback). Auto-reconnects with exponential backoff. Set `SLACK_BOT_TOKEN`, `SLACK_SIGNING_SECRET`, and `SLACK_APP_TOKEN` env vars.
 
 ### Email (web/integrations/email.js)
 **What**: An IMAP watcher that monitors a mailbox for forwarded emails and saves them to your brain's inbox as markdown.
 **Why**: When someone sends you something worth remembering, forward it to your brain address. It gets processed in the next wind-down along with your meeting transcripts.
 **How**: Watches a designated mailbox (like a "Brain" Gmail label). Converts emails to markdown in `inbox/email/`. Set `BRAIN_EMAIL_HOST`, `BRAIN_EMAIL_USER`, `BRAIN_EMAIL_PASS`.
+
+### Integration Status
+All integrations expose status via `GET /api/integrations/status`. Returns connection state, error history, and message counts. See `docs/INTEGRATIONS.md` for detailed setup guides.
+
+---
+
+## Self-Healing
+
+The system actively monitors its own health and recovers from common problems.
+
+### Checkpoint Recovery
+**What**: Wind-down writes a checkpoint file (`.wind-down-checkpoint.json`) after each major phase. If interrupted (crash, timeout, lost connection), the next run detects the checkpoint and offers to resume.
+**Why**: Processing 6+ meetings takes time. Losing progress halfway through is frustrating. Checkpoints let you pick up where you left off.
+
+### Session Lockfile
+**What**: A lockfile (`.brain.lock`) prevents two wind-down sessions from running simultaneously. Includes PID tracking for stale lock detection.
+**Why**: Running two wind-down sessions at once would cause data corruption — both trying to write to the same files. The lock prevents this, and stale detection handles cases where a session crashed without cleanup.
+
+### Data Validation (validate-data.sh)
+**What**: Checks data consistency — broken wiki-links, date ordering in handoff/health, duplicate commitments, empty files.
+**Why**: Small inconsistencies accumulate over time. A broken `[[link]]` is harmless alone but 20 of them degrade the system. Validation catches issues early, runs in wind-down preflight, wake-up background, and post-commit hooks.
+
+### Preference Conflict Detection (check-preferences.sh)
+**What**: Scans preferences.md for contradictory rules, near-duplicates, and bloat (>25 rules).
+**Why**: As rules accumulate from corrections, they can start to contradict each other ("always track X" vs "don't track X"). This catches conflicts before they cause inconsistent behavior.
+
+### Wake-Up Feedback Loop
+**What**: After each morning briefing, asks for quick feedback on what was useful and what wasn't.
+**Why**: Wind-down captures corrections about *processing*. Wake-up feedback captures corrections about *presentation*. Together they close the full learning loop — the system gets better at both understanding your meetings and briefing you about them.
 
