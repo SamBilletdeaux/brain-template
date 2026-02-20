@@ -372,71 +372,6 @@ app.get('/prep', (req, res) => {
   });
 });
 
-// Drafts (from background processor)
-app.get('/drafts', (req, res) => {
-  const draftsDir = path.join(opts.brain, 'inbox', 'drafts');
-  let draftsHtml = '';
-
-  if (fs.existsSync(draftsDir)) {
-    // Get direct draft files (not in subdirs like follow-ups/)
-    const files = fs.readdirSync(draftsDir)
-      .filter(f => f.endsWith('.md'))
-      .sort()
-      .reverse();
-
-    if (files.length > 0) {
-      draftsHtml = files.map(f => {
-        const doc = readMarkdownFile(path.join(draftsDir, f));
-        return `<div class="timeline-entry">
-          <div class="prep-filename">${f.replace('.md', '')}</div>
-          ${doc.html}
-        </div>`;
-      }).join('\n');
-    }
-  }
-
-  if (!draftsHtml) {
-    draftsHtml = '<p class="empty">No drafts yet. The background processor generates these from inbox transcripts.</p>';
-  }
-
-  render(res, 'drafts.html', {
-    title: 'Drafts',
-    drafts: draftsHtml,
-  });
-});
-
-// Follow-ups
-app.get('/follow-ups', (req, res) => {
-  const draftsDir = path.join(opts.brain, 'inbox', 'drafts', 'follow-ups');
-  let draftsHtml = '';
-
-  if (fs.existsSync(draftsDir)) {
-    const files = fs.readdirSync(draftsDir)
-      .filter(f => f.endsWith('.md'))
-      .sort()
-      .reverse();
-
-    if (files.length > 0) {
-      draftsHtml = files.map(f => {
-        const doc = readMarkdownFile(path.join(draftsDir, f));
-        return `<div class="timeline-entry">
-          <div class="prep-filename">${f.replace('.md', '')}</div>
-          ${doc.html}
-        </div>`;
-      }).join('\n');
-    }
-  }
-
-  if (!draftsHtml) {
-    draftsHtml = '<p class="empty">No follow-up drafts yet. Run: <code>python3 scripts/generate-followups.py ~/brain</code></p>';
-  }
-
-  render(res, 'followups.html', {
-    title: 'Follow-Ups',
-    drafts: draftsHtml,
-  });
-});
-
 // ---------------------------------------------------------------------------
 // Integrations
 // ---------------------------------------------------------------------------
@@ -452,7 +387,7 @@ if (slackApp) {
   });
 }
 
-// Inbox API (used by browser extension and other integrations)
+// Inbox API (used by integrations)
 app.use(express.json());
 
 app.post('/api/inbox', (req, res) => {

@@ -1,5 +1,7 @@
 # Brain System Roadmap
 
+> **Note**: Some sections below reference features pruned during the hardening sprint (Linear, browser extension, background processor, notifications, follow-ups, weekly review). Kept for historical context.
+
 A phased project plan to evolve brain-template from a CLI batch processor into an always-on personal knowledge system.
 
 **Principle**: Each phase is independently valuable. Ship each one before starting the next.

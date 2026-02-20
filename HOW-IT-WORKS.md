@@ -196,26 +196,6 @@ The system doesn't just wait for you to ask — it watches, prepares, and nudges
 **Why**: Walking into a meeting prepared means better outcomes. This pulls everything you need from your brain files in seconds instead of you having to open and read multiple files.
 **How**: Reads calendar data from Granola, matches attendees to people files (by name, email, or even parsing the meeting title), finds threads that mention those people, and checks for related commitments. Output goes to `inbox/prep/`.
 
-### Notifications (notify.sh)
-**What**: macOS notifications for wind-down reminders (8pm), stale commitments (9am), and meeting prep readiness (8am/12pm).
-**Why**: The system should nudge you, not the other way around. If you haven't processed today's meetings by evening, you get a reminder. If a commitment is going stale, you get a heads-up.
-**How**: Shell script using `osascript` for native macOS notifications. Three launchd agents run on schedule. Install with `install-notifications.sh`.
-
-### Background Processor (background-processor.py)
-**What**: Watches the inbox for new transcript snapshots and pre-indexes entity extractions (people, threads, action patterns, decisions) into draft files.
-**Why**: Pre-digests transcripts as they arrive so wind-down has a head start on entity matching. All actual AI analysis happens in Claude Code during /wind-down — this script handles the mechanical pattern-matching.
-**How**: Scans `inbox/granola/` recursively, runs rule-based extraction (people matching, thread matching, action/decision regex), writes drafts to `inbox/drafts/`. Run with `--once` or in continuous watch mode. No API key required.
-
-### Follow-Up Drafts (generate-followups.py)
-**What**: Detects commitments that look like "send X to Y" or "share X with Y" and generates draft message skeletons with context.
-**Why**: The hardest part of following up is starting the message. This gives you a draft with the commitment, source meeting, related handoff context, and a message template. You edit and send — the system never sends on its own.
-**How**: Pattern-matches active commitments against follow-up verbs (share, send, follow up, email, etc.), cross-references people files and handoff entries, writes to `inbox/drafts/follow-ups/`.
-
-### Weekly Review (/weekly-review)
-**What**: A Friday reflection command that analyzes the past week — which threads moved, which stalled, commitment scorecard, people interactions, system health trends.
-**Why**: Daily wind-down captures the trees. Weekly review shows the forest. Helps you spot patterns: are you neglecting a thread? Is a commitment going stale? Have you lost touch with someone?
-**How**: Claude Code command that reads health.md history, handoff entries, threads, people, and commitments from the past 7 days, then generates a structured review.
-
 ---
 
 ## The Web UI
@@ -232,8 +212,6 @@ The system doesn't just wait for you to ask — it watches, prepares, and nudges
 | Timeline | `/timeline` | Handoff entries in chronological order — your daily log as a readable feed |
 | Search | `/search` | Full-text search powered by the SQLite index. Finds matches across all files |
 | Prep | `/prep` | Meeting prep packets with attendee context, relevant threads, commitments |
-| Drafts | `/drafts` | Auto-processed transcript summaries from the background processor |
-| Follow-Ups | `/follow-ups` | Draft messages for action items that involve sending something to someone |
 | Thread detail | `/thread/:name` | A single thread file rendered as HTML with clickable wiki-links |
 | Person detail | `/person/:name` | A single person file rendered as HTML |
 
@@ -301,12 +279,3 @@ Each integration is optional and independent. They extend the brain to where wor
 **Why**: When someone sends you something worth remembering, forward it to your brain address. It gets processed in the next wind-down along with your meeting transcripts.
 **How**: Watches a designated mailbox (like a "Brain" Gmail label). Converts emails to markdown in `inbox/email/`. Set `BRAIN_EMAIL_HOST`, `BRAIN_EMAIL_USER`, `BRAIN_EMAIL_PASS`.
 
-### Linear (web/integrations/linear.js)
-**What**: Bidirectional sync between your commitments and Linear tickets.
-**Why**: Some commitments become tickets. Instead of tracking them in two places, tag a commitment with `@linear:PROJ-123` and they stay in sync. When the ticket closes in Linear, the commitment auto-completes in your brain.
-**How**: Polls Linear API and handles webhooks. Set `LINEAR_API_KEY`. Trigger sync via `POST /api/linear/sync` or set up a Linear webhook.
-
-### Browser Extension (extension/)
-**What**: A Chrome extension with an "Add to Brain" button. Right-click any page (or selected text) to capture it.
-**Why**: You're reading an article, a Slack thread in the browser, a Confluence page — anything worth remembering. One click captures it to your inbox with a note about why it matters.
-**How**: Sends to `localhost:3141/api/inbox`. Install via Chrome → Extensions → Developer Mode → Load Unpacked → select the `extension/` folder.

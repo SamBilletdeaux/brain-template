@@ -1,5 +1,7 @@
 # System Audit — Post-Roadmap Honest Assessment
 
+> **Note**: Some sections below reference features pruned during the hardening sprint (Linear, browser extension, background processor, notifications, follow-ups, weekly review). Kept for historical context.
+
 Written after completing all 6 phases of the roadmap. This is a friend-level honest review of where the system actually stands, what's going to break, what's missing, and what needs to happen before this is a genuinely reliable 10x productivity tool.
 
 ---

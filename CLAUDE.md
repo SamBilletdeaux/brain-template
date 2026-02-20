@@ -14,7 +14,6 @@ A personal knowledge system that processes meeting transcripts into living docum
 | `/sync-template` | Pull latest template updates into private brain |
 | `/doctor` | System health check — validates config, links, staleness |
 | `/search` | Full-text search across all brain files and relationships |
-| `/weekly-review` | Weekly reflection — threads, commitments, trends |
 
 ## Helper Scripts (in scripts/)
 
@@ -35,11 +34,6 @@ A personal knowledge system that processes meeting transcripts into living docum
 | `install-hooks.sh` | Install git post-commit hook for auto-indexing |
 | `brain-server.sh` | Start/stop/status for the local web UI |
 | `generate-prep.py` | Auto-generate meeting prep packets from calendar |
-| `generate-followups.py` | Draft follow-up messages for commitments |
-| `background-processor.py` | Process inbox transcripts into drafts |
-| `notify.sh` | Send macOS notifications (direct or scheduled checks) |
-| `install-notifications.sh` | Install notification launchd agents |
-| `uninstall-notifications.sh` | Remove notification agents |
 | `auto-trim.sh` | Auto-archive old handoff/health/commitments/inbox data |
 
 ## Web UI (in web/)
@@ -52,7 +46,7 @@ A local web app for browsing your brain in a browser. Not deployed — runs on `
 ./scripts/brain-server.sh status           # Check if running
 ```
 
-Pages: Dashboard (`/`), Timeline (`/timeline`), Prep (`/prep`), Drafts (`/drafts`), Follow-Ups (`/follow-ups`), Search (`/search`), Thread (`/thread/:name`), Person (`/person/:name`)
+Pages: Dashboard (`/`), Timeline (`/timeline`), Prep (`/prep`), Search (`/search`), Thread (`/thread/:name`), Person (`/person/:name`)
 
 ## Integrations (in web/integrations/)
 
@@ -60,13 +54,6 @@ Pages: Dashboard (`/`), Timeline (`/timeline`), Prep (`/prep`), Drafts (`/drafts
 |-------------|----------------|--------------|
 | Slack | `SLACK_BOT_TOKEN`, `SLACK_SIGNING_SECRET` | `/brain` slash command, starred message capture, DM delivery |
 | Email | `BRAIN_EMAIL_HOST`, `BRAIN_EMAIL_USER`, `BRAIN_EMAIL_PASS` | IMAP watcher, forward-to-brain, mailto links |
-| Linear | `LINEAR_API_KEY` | Bidirectional commitment ↔ issue sync |
-
-## Browser Extension (in extension/)
-
-Chrome extension: "Add to Brain" — right-click or popup to capture any web page, selected text, or note to your brain's inbox. Sends to `localhost:3141/api/inbox`.
-
-Install: Chrome → `chrome://extensions` → Developer mode → Load unpacked → select `extension/` folder
 
 ### extract-granola.sh usage:
 ```bash
@@ -99,7 +86,6 @@ brain/
 │   ├── files/          # Manual uploads
 │   └── .processed/     # Processed item markers
 ├── web/                # Local web UI (Express + SQLite + integrations)
-├── extension/          # Chrome "Add to Brain" extension
 ├── .brain.db           # SQLite search index (gitignored, rebuildable)
 ├── config.md           # User identity and data sources
 ├── preferences.md      # Learned rules from corrections
@@ -147,12 +133,12 @@ During `/wind-down`:
 ## Tests (in tests/)
 
 ```bash
-python3 -m pytest tests/ -v              # Python tests (51 tests)
+python3 -m pytest tests/ -v              # Python tests
 bash tests/test_auto_trim.sh             # Auto-trim shell tests (11 assertions)
 bash tests/test_update_health.sh         # Health update shell tests (10 assertions)
 ```
 
-Covers: background-processor.py, generate-prep.py, generate-followups.py, auto-trim.sh, update-health.sh
+Covers: generate-prep.py, auto-trim.sh, update-health.sh
 
 ## Design Principles
 - Threads, not projects (flat > hierarchical)
