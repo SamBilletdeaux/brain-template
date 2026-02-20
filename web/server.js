@@ -387,6 +387,21 @@ if (slackApp) {
   });
 }
 
+// Email
+const { EmailWatcher } = require('./integrations/email');
+const emailWatcher = new EmailWatcher(opts.brain);
+if (emailWatcher.canStart()) {
+  emailWatcher.start();
+}
+
+// Integration status endpoint
+app.get('/api/integrations/status', (req, res) => {
+  res.json({
+    slack: slackApp ? slackApp.getStatus() : { connected: false, reason: 'not configured' },
+    email: emailWatcher.getStatus(),
+  });
+});
+
 // Inbox API (used by integrations)
 app.use(express.json());
 

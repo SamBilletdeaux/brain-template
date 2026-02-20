@@ -46,18 +46,22 @@ function createSlackApp(brainRoot, db, renderMarkdown) {
     return null;
   }
 
+  if (!appToken) {
+    console.log('Slack: SLACK_APP_TOKEN required for Socket Mode. See docs/INTEGRATIONS.md');
+    return null;
+  }
+
   const appOpts = {
     token,
     signingSecret,
+    socketMode: true,
+    appToken,
   };
 
-  // Use Socket Mode if app token available (no public URL needed)
-  if (appToken) {
-    appOpts.socketMode = true;
-    appOpts.appToken = appToken;
-  }
-
   const app = new bolt.App(appOpts);
+
+  // Connection state tracking
+  let connectionState = { connected: false, reconnectAttempts: 0 };
 
   // --- /brain slash command ---
   app.command('/brain', async ({ command, ack, respond }) => {
@@ -251,6 +255,35 @@ function createSlackApp(brainRoot, db, renderMarkdown) {
       console.error('Slack star capture error:', e.message);
     }
   });
+
+  // Override start to track connection state and add reconnection
+  const originalStart = app.start.bind(app);
+  app.start = async function() {
+    const MAX_RECONNECT = 5;
+
+    const attemptConnect = async () => {
+      try {
+        await originalStart();
+        connectionState.connected = true;
+        connectionState.reconnectAttempts = 0;
+      } catch (err) {
+        connectionState.connected = false;
+        connectionState.reconnectAttempts++;
+        if (connectionState.reconnectAttempts <= MAX_RECONNECT) {
+          const delay = Math.min(1000 * Math.pow(2, connectionState.reconnectAttempts), 30000);
+          console.log(`Slack: reconnecting in ${delay}ms (attempt ${connectionState.reconnectAttempts}/${MAX_RECONNECT})`);
+          setTimeout(attemptConnect, delay);
+        } else {
+          console.log(`Slack: gave up after ${MAX_RECONNECT} reconnection attempts`);
+        }
+        throw err;
+      }
+    };
+
+    return attemptConnect();
+  };
+
+  app.getStatus = () => ({ ...connectionState });
 
   return app;
 }

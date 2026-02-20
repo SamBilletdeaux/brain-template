@@ -4,7 +4,6 @@
  * Provides:
  * - IMAP watcher: monitors a mailbox for forwarded emails, saves to inbox
  * - Weekly digest: generates and sends a summary of brain activity
- * - Follow-up mailto links: creates clickable email links from drafts
  *
  * Environment variables:
  *   BRAIN_EMAIL_HOST     — IMAP server (e.g., imap.gmail.com)
@@ -39,6 +38,8 @@ class EmailWatcher {
     this.brainRoot = brainRoot;
     this.imap = null;
     this.watching = false;
+    this.messagesProcessed = 0;
+    this.lastError = null;
   }
 
   canStart() {
@@ -62,7 +63,6 @@ class EmailWatcher {
       host: process.env.BRAIN_EMAIL_HOST,
       port: parseInt(process.env.BRAIN_EMAIL_PORT || '993', 10),
       tls: true,
-      tlsOptions: { rejectUnauthorized: false },
     });
 
     this.imap.on('ready', () => {
@@ -72,6 +72,7 @@ class EmailWatcher {
 
     this.imap.on('error', (err) => {
       console.error('Email: IMAP error —', err.message);
+      this.lastError = err.message;
     });
 
     this.imap.on('end', () => {
@@ -180,33 +181,22 @@ class EmailWatcher {
       ].join('\n');
 
       fs.writeFileSync(path.join(inboxDir, filename), content);
+      this.messagesProcessed++;
       console.log(`Email: saved ${filename}`);
     } catch (e) {
       console.error('Email: parse error —', e.message);
+      this.lastError = e.message;
     }
   }
-}
 
-/**
- * Generate a mailto: link for a follow-up draft
- */
-function followUpMailtoLink(draft) {
-  const subjectMatch = draft.match(/\*\*Subject\*\*:\s*(.+)/);
-  const subject = subjectMatch
-    ? subjectMatch[1].replace('[TODO — suggested: ', '').replace(']', '')
-    : 'Follow-up';
-
-  // Extract the draft message body
-  const bodyMatch = draft.match(/## Draft Message\n\n([\s\S]*?)(?=\n---|\n##|$)/);
-  let body = '';
-  if (bodyMatch) {
-    body = bodyMatch[1]
-      .replace(/^>\s*/gm, '')  // remove blockquote markers
-      .replace(/\*\*/g, '')     // remove bold markers
-      .trim();
+  getStatus() {
+    return {
+      connected: this.imap !== null && this.watching,
+      watching: this.watching,
+      messagesProcessed: this.messagesProcessed,
+      lastError: this.lastError,
+    };
   }
-
-  return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
-module.exports = { EmailWatcher, followUpMailtoLink };
+module.exports = { EmailWatcher };
