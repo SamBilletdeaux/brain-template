@@ -36,6 +36,14 @@ underlying rule gets captured here so it doesn't happen again.
 ## File Structure Rules
 - (will accumulate as structure decisions are made)
 
+## Wake-Up Rules
+<!-- Accumulated from /wake-up feedback. Examples:
+- "Always include next meeting prep context"
+- "Skip thread resurrections on Mondays"
+-->
+
+(Will accumulate from wake-up feedback.)
+
 ## System Thresholds
 <!-- These are starting guesses. Adjust based on experience. When a threshold fires
      and you say it was too early or too late, update the number here. -->

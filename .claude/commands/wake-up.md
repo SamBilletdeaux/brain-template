@@ -93,6 +93,20 @@ Present the briefing, then ask:
 
 ---
 
+## Phase 5: Capture Feedback
+
+After presenting the briefing and handling any requests, ask:
+
+> "Quick briefing check:
+> - Anything **missing** you wished was here?
+> - Anything **included** that wasn't useful?
+> - Any other feedback?"
+
+- **If feedback given**: Extract a concrete rule and save it to `preferences.md` under the `## Wake-Up Rules` section. For example: "Always include next meeting prep context" or "Skip thread resurrections on Mondays."
+- **If no feedback**: Note it silently (this feeds into the rubber-stamp detection in health.md — consecutive no-feedback sessions are tracked).
+
+---
+
 ## Important Notes
 
 - **Keep it scannable.** Bullets, not paragraphs.

@@ -17,4 +17,10 @@ inbox/
 .brain.db-wal
 .brain.db-shm
 
+# Wind-down checkpoint (session state, not data)
+.wind-down-checkpoint.json
+
+# Session lockfile
+.brain.lock
+
 # Don't ignore any markdown files — they're the whole point

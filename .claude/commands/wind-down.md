@@ -23,6 +23,19 @@ Key files (paths relative to brain root from config.md):
 
 Before processing anything, check the system's health and confirm what you're working with.
 
+### 0-pre. Checkpoint Recovery
+
+Check for an existing checkpoint file at `[brain-root]/.wind-down-checkpoint.json`.
+
+- **If found and today's date**: A previous wind-down was interrupted. Show: "Found checkpoint from [time] — [N] meetings confirmed, [N] summaries written. Resume where we left off, or start fresh?" If resuming, skip to the phase indicated in the checkpoint.
+- **If found but stale (different date)**: "Found stale checkpoint from [date]. Starting fresh." Delete the checkpoint.
+- **If not found**: Continue normally.
+
+Checkpoint structure:
+```json
+{"date":"YYYY-MM-DD","phase":1,"meetings_confirmed":["slug1"],"summaries_written":["path1"],"data_source":"mcp","started_at":"ISO"}
+```
+
 ### 0a. Read Config, Preferences & Health
 1. Read `config.md` — note the user's name, data sources (types, paths, quirks), and any transition markers.
 2. Read `preferences.md` in full. Follow every rule precisely — including the System Thresholds section.
@@ -133,6 +146,11 @@ Wait for the user's response before proceeding.
 
 If additional assets are provided by any method, incorporate them alongside the auto-extracted data.
 
+**Write checkpoint**: After the user confirms the meeting list, write the initial checkpoint:
+```json
+{"date":"YYYY-MM-DD","phase":0,"meetings_confirmed":["slug1","slug2"],"summaries_written":[],"data_source":"mcp|inbox|cache","started_at":"ISO"}
+```
+
 ### 0e. Archive Raw Data
 
 Save raw data to `archive/meetings/YYYY-MM-DD/` (path relative to brain root):
@@ -180,9 +198,17 @@ To manage context window limits, process meetings in this order:
 
 For thread/people files: don't pre-load everything. List directory contents, then load specific files only when a meeting summary references a relevant topic or person. Lazy reads, not eager reads.
 
+**Progress signal**: After each meeting summary is generated, show:
+`"Processed [N]/[total]: [title] ([word count] words)"`
+
+**Update checkpoint**: After each summary, update the checkpoint's `summaries_written` array and set `"phase": 1`.
+
 ---
 
 ## Phase 2: Identify Updates to Living Documents
+
+**Progress signal**: Before starting this phase, show:
+`"All meetings processed. Compiling proposed changes..."`
 
 Before writing anything, compile a complete list of proposed changes. Read all potentially relevant existing files first. Use the decision frameworks below to guide every decision.
 
@@ -472,6 +498,12 @@ cd [brain-root] && git add -A && git commit -m "wind-down: YYYY-MM-DD - [brief s
 If git is not initialized:
 ```bash
 cd [brain-root] && git init && git add -A && git commit -m "initial brain commit"
+```
+
+### Delete Checkpoint
+After a successful git commit, delete the checkpoint file:
+```bash
+rm -f [brain-root]/.wind-down-checkpoint.json
 ```
 
 ### Confirmation
