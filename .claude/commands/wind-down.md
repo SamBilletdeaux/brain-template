@@ -36,6 +36,10 @@ Checkpoint structure:
 {"date":"YYYY-MM-DD","phase":1,"meetings_confirmed":["slug1"],"summaries_written":["path1"],"data_source":"mcp","started_at":"ISO"}
 ```
 
+### 0a-pre. Acquire Session Lock
+
+Run `./scripts/brain-lock.sh acquire [brain-root] wind-down`. If the lock is held by another process, show who holds it and stop: "Another brain session is active ([session] since [time]). Wait for it to finish, or run `./scripts/brain-lock.sh force-release [brain-root]`."
+
 ### 0a. Read Config, Preferences & Health
 1. Read `config.md` — note the user's name, data sources (types, paths, quirks), and any transition markers.
 2. Read `preferences.md` in full. Follow every rule precisely — including the System Thresholds section.
@@ -56,6 +60,8 @@ Check for issues before doing any heavy processing:
 
 **Volume estimate:** Count today's meetings and estimate transcript word counts before full processing. If volume exceeds the triage mode threshold in preferences.md:
 - "Heavy day ([N] meetings, ~[X]k words). Activating triage mode — I'll auto-commit 🟢 decisions and focus your review on 🟡 and 🔴 items."
+
+**Data validation:** Run `./scripts/validate-data.sh [brain-root]`. If exit code 2 (errors), stop and report. If exit code 1 (warnings), queue for Section 6 review.
 
 **Preferences health check:** Run `./scripts/check-preferences.sh [brain-root]`. If warnings are found (contradictions, near-duplicates, or >25 rules), queue them for Section 6 review.
 
@@ -502,10 +508,11 @@ If git is not initialized:
 cd [brain-root] && git init && git add -A && git commit -m "initial brain commit"
 ```
 
-### Delete Checkpoint
-After a successful git commit, delete the checkpoint file:
+### Cleanup
+After a successful git commit, clean up session state:
 ```bash
 rm -f [brain-root]/.wind-down-checkpoint.json
+./scripts/brain-lock.sh release [brain-root]
 ```
 
 ### Confirmation

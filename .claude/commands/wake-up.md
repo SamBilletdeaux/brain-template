@@ -20,9 +20,11 @@ Key files (paths relative to brain root from config.md):
 
 ## Phase 1: Read Context
 
+**Data validation (silent):** Run `./scripts/validate-data.sh [brain-root]` silently. If errors are found (exit code 2), add a "System Health Warning" section to the briefing listing the issues.
+
 Read these files in order:
 1. `config.md` — Note user identity, data sources, and any transition markers
-2. `preferences.md` — Follow every rule precisely (including System Thresholds)
+2. `preferences.md` — Follow every rule precisely (including System Thresholds and Wake-Up Rules)
 3. `health.md` — Check last wind-down date. If there's a gap, note it in the briefing.
 4. `handoff.md` — At minimum the most recent entry, ideally last 2-3 days
 5. `commitments.md`

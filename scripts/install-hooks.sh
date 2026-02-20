@@ -30,6 +30,9 @@ BRAIN_ROOT="$BRAIN_ROOT"
 
 # Run indexer in background so commits aren't slowed down
 (python3 "\$SCRIPTS_DIR/indexer.py" "\$BRAIN_ROOT" > /dev/null 2>&1) &
+
+# Run data validation in background, log warnings
+(bash "\$SCRIPTS_DIR/validate-data.sh" "\$BRAIN_ROOT" > /tmp/brain-validate.log 2>&1) &
 HOOK
 
 chmod +x "$HOOKS_DIR/post-commit"

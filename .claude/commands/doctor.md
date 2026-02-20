@@ -10,7 +10,10 @@ Read `config.md` first to get brain root path and data source configuration.
 
 Run ALL of the following checks and report results:
 
-### 1. Config Validation
+### 1. Data Validation
+Run `scripts/validate-data.sh [brain-root]` and report any errors or warnings (broken links, date ordering, duplicates, empty files).
+
+### 1b. Config Validation
 Run `scripts/validate-config.sh` and report any errors or warnings.
 
 ### 2. Referential Integrity
@@ -77,8 +80,28 @@ Present results as a scannable report:
 Summary: 2 warnings, 0 errors
 ```
 
+### 9. Lockfile Status
+Check `./scripts/brain-lock.sh check [brain-root]`. If a stale lock is found, include it in auto-fixable issues.
+
+### 10. Preference Conflicts
+Run `./scripts/check-preferences.sh [brain-root]`. Report any contradictions, near-duplicates, or size warnings.
+
+## Automated Fixes
+
+After the report, classify issues into two groups:
+
+**Auto-fixable** (offer to batch-fix with a git commit):
+- Broken wiki-links → remove the broken `[[link]]` markers (keep the text)
+- Empty thread/people files → delete them
+- Stale lockfile → force-release via `./scripts/brain-lock.sh force-release`
+- Out-of-order rows in handoff.md/health.md → re-sort
+
+**Human-decision required** (list but don't auto-fix):
+- Stale commitments → "Mark complete, update, or remove?"
+- Dormant threads → "Archive or resurrect?"
+- Preference conflicts → "Which rule should win?"
+- Duplicate commitments → "Which to keep?"
+
 After the report, offer:
-> "Want me to fix any of these? I can:
-> - Run archival to trim large files
-> - Help update stale commitments
-> - Archive dormant threads"
+> "Want me to fix the auto-fixable issues? I'll make the changes and commit them.
+> For the human-decision items, tell me what you'd like to do with each one."
