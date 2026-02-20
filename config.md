@@ -53,6 +53,16 @@ Read by every command before execution. Edit directly or re-run `/setup` to rege
 
 -->
 
+## MCP Servers
+<!-- MCP servers provide direct API access to data sources, avoiding local cache limitations. -->
+
+### Granola
+- **Server**: `granola-mcp` — Meeting search and transcript download
+- **Status**: not installed
+- **Install**: `claude mcp add --scope user --transport stdio granola -- uv run --script ~/granola-mcp/granola-mcp.py`
+- **Fallback**: Local cache at ~/Library/Application Support/Granola/cache-v3.json
+- **Tools**: `search_meetings`, `download_transcript`, `download_note`, `get_meeting_lists`
+
 ## Paths
 - **Brain root**: ~/brain/
 - **Archive**: ~/brain/archive/

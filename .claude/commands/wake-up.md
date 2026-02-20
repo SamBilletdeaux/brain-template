@@ -33,10 +33,12 @@ Scan `threads/` and `people/` directory listings so you know what's available, b
 
 ## Phase 2: Check Today's Calendar
 
-Check today's calendar using the method specified in `config.md`:
-- **Granola**: Read the cache at the configured path and extract today's events from `state.events` or `state.documents` with today's date.
-- **Other calendar sources**: Follow the source-specific instructions in config.
-- **No calendar source configured**: Skip this step and note that meeting prep is unavailable without calendar data.
+Check today's calendar using a tiered approach:
+
+1. **Try Granola MCP first**: If the `granola` MCP server is available, use `get_meeting_lists` or `search_meetings` for today's date to get upcoming meetings. This is the most reliable path.
+2. **Fall back to cache**: If MCP tools aren't available, read the Granola cache at the configured path in `config.md` and extract today's events from `state.events` or `state.documents` with today's date.
+3. **Other calendar sources**: Follow the source-specific instructions in config.
+4. **No calendar source configured**: Skip this step and note that meeting prep is unavailable without calendar data.
 
 For each meeting today, identify:
 - Title, time, attendees

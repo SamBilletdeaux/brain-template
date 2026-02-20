@@ -53,23 +53,33 @@ Check for issues before doing any heavy processing:
 
 ### 0c. Extract Meetings from Configured Sources
 
-**Check the inbox first.** The inbox (`inbox/` in brain root) is the primary input layer. Snapshots from the transcript daemon and manual uploads land here automatically.
+Meeting data is gathered using a three-tier fallback: MCP → inbox snapshots → live cache.
 
-**Step 1: Check inbox/granola/ for pre-snapshotted transcripts**
+**Step 1: Try Granola MCP (preferred)**
+If the `granola` MCP server is available (check by attempting to use MCP tools):
+- Use `search_meetings` with today's date to get the meeting list
+- Use `download_transcript` for each meeting to get full transcript text
+- This is the most reliable path — uses Granola's API directly, no cache expiration concerns
+- Record `"data_source": "mcp"` for the checkpoint file
+
+If MCP tools are not available (server not running, not installed), fall back to Step 2.
+
+**Step 2: Check inbox/granola/ for pre-snapshotted transcripts**
 - List all date directories in `inbox/granola/` that haven't been processed yet
 - A date directory is "unprocessed" if it's NOT in `inbox/.processed/`
 - For each unprocessed directory, read the JSON files inside — each is one meeting with title, attendees, transcript text, and metadata already extracted
 - This handles today AND any missed days (catch-up processing)
+- Record `"data_source": "inbox"` for the checkpoint file
 
-**Step 2: Check inbox/notes/ for quick-capture notes**
+**Step 3: Check inbox/notes/ for quick-capture notes**
 - List any `.md` files in `inbox/notes/`
 - These are user-captured thoughts to route to appropriate threads during processing
 
-**Step 3: Check inbox/files/ for manually uploaded transcripts**
+**Step 4: Check inbox/files/ for manually uploaded transcripts**
 - List any files dropped here (via file picker or manual copy)
 
-**Step 4: Fall back to live Granola cache (if inbox is empty for today)**
-If no snapshot exists for today in `inbox/granola/`, fall back to reading the cache directly:
+**Step 5: Fall back to live Granola cache (if inbox is also empty for today)**
+If no data from MCP or inbox snapshots for today, fall back to reading the cache directly:
 
 Iterate through each data source listed in `config.md`. For each source:
 
@@ -82,6 +92,7 @@ state.transcripts (dict of transcript arrays, keyed by document ID)
 Filter documents to find today's meetings (by `created_at` date). For each meeting, extract:
 - Title, attendees (from `google_calendar_event.attendees`), start/end time
 - Transcript availability (check if `state.transcripts[document_id]` exists and is non-empty)
+- Record `"data_source": "cache"` for the checkpoint file
 **CRITICAL**: Granola only keeps transcripts in cache for ~1 day. If transcripts are empty, warn the user immediately. Consider running `scripts/snapshot-transcripts.sh` to salvage what's still available.
 
 **File-based sources** (type: `otter`, `fireflies`, or other export-based tools):
@@ -91,6 +102,8 @@ Check the export path from config.md for new files dated today. List any found.
 These are handled in the asset inventory step — the user uploads/pastes them.
 
 Note any source-specific quirks from config.md (speaker labels available, AI summaries included, etc.) — these affect how meetings are processed in Phase 1.
+
+**Signal data source to user**: In the asset inventory (0d), include a line like "Data source: Granola MCP" or "Data source: local cache (MCP unavailable)" so the user knows which path was used.
 
 ### 0d. Present Asset Inventory
 
