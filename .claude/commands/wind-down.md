@@ -57,6 +57,8 @@ Check for issues before doing any heavy processing:
 **Volume estimate:** Count today's meetings and estimate transcript word counts before full processing. If volume exceeds the triage mode threshold in preferences.md:
 - "Heavy day ([N] meetings, ~[X]k words). Activating triage mode — I'll auto-commit 🟢 decisions and focus your review on 🟡 and 🔴 items."
 
+**Preferences health check:** Run `./scripts/check-preferences.sh [brain-root]`. If warnings are found (contradictions, near-duplicates, or >25 rules), queue them for Section 6 review.
+
 **Entropy check:** Count threads, people files, and preferences rules. If any exceed their thresholds in preferences.md, **don't block the wind-down** — just queue a note for Section 6 of the review:
 - "🧹 You have [N] dormant threads older than 30 days. Worth pruning after tonight's wind-down?"
 - "📋 preferences.md has [N] rules. Some may overlap or contradict — want to do a consolidation pass?"
@@ -517,11 +519,16 @@ Written:
 - [N] people files updated, [N] created
 - [N] commitments added, [N] completed
 - Handoff entry added
+
+Learning:
 - [N] new rules added to preferences.md
+  [Quote each new rule added this session]
+- Total rules: [N]
+- Consecutive days: [N] (from health.md)
+- Correction trend: [N] avg corrections last 7 runs vs [N] the 7 before
 
 Git commit: [hash]
 
-Health: [N] active threads, [N] dormant, [N] people files, [N] pref rules
 [Any maintenance suggestions queued from preflight]
 
 See you tomorrow at /wake-up! 👋
