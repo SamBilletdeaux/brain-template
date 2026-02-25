@@ -170,7 +170,22 @@ Save raw data to `archive/meetings/YYYY-MM-DD/` (path relative to brain root):
 
 ## Phase 1: Process Meetings
 
-For each confirmed meeting, read the full transcript and generate a summary at `archive/meetings/YYYY-MM-DD/{meeting-slug}.md`.
+**CRITICAL: Process-and-Flush Pattern**
+
+Context window is the binding constraint. With 5+ meetings and 30-50k words of transcripts, you WILL exhaust context if you hold multiple transcripts simultaneously. Process each meeting as a self-contained unit:
+
+1. **Read** one transcript (or delegate to a Task agent if large — see below)
+2. **Write** the summary to `archive/meetings/YYYY-MM-DD/{meeting-slug}.md` immediately
+3. **Flush** — move to the next meeting. Do NOT hold previous transcripts in context.
+4. After ALL summaries are written, Phase 2+ works ONLY from the saved summary files — never from memory of raw transcripts.
+
+### Large Transcript Handling
+
+Transcripts over ~30KB (~45+ minutes of conversation) should be delegated to a Task agent (subagent_type: general-purpose) to avoid consuming main context window. The agent reads the full transcript and returns a structured summary following the Meeting Summary Format below. Write that summary to disk immediately.
+
+For transcripts under ~30KB, read directly in the main context but still write the summary and move on before reading the next transcript.
+
+**Sort meetings by transcript size (smallest first)** so quick meetings get processed in the main context first, and large transcripts can be delegated to agents in parallel.
 
 ### Meeting Summary Format
 - **Summary** (2-3 sentences)
@@ -197,14 +212,9 @@ Speaker identification depends on the data source (check config.md quirks):
 - **Sources with speaker labels** (Otter, Fireflies, Zoom): Use them. Attribute observations to speakers when clear.
 - **Sources without speaker labels** (Granola, manual paste): For 1:1s you can sometimes infer from context, but don't attribute quotes to specific people unless very confident. Frame observations as "the discussion covered..." not "Person X said..."
 
-### Context Budget
+### Lazy Loading for Living Documents
 
-To manage context window limits, process meetings in this order:
-1. Generate and save each meeting summary immediately (reduces a long transcript to ~500 tokens)
-2. Archive the raw transcript to disk
-3. Work from summaries for all subsequent phases — only re-read raw transcripts if you need to resolve an ambiguity
-
-For thread/people files: don't pre-load everything. List directory contents, then load specific files only when a meeting summary references a relevant topic or person. Lazy reads, not eager reads.
+When moving to Phase 2+, read ONLY the summary files you just wrote to disk. Do not pre-load all thread and people files — list directory contents first, then load specific files only when a meeting summary references a relevant topic or person.
 
 **Progress signal**: After each meeting summary is generated, show:
 `"Processed [N]/[total]: [title] ([word count] words)"`
