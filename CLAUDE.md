@@ -14,6 +14,7 @@ A personal knowledge system that processes meeting transcripts into living docum
 | `/sync-template` | Pull latest template updates into private brain |
 | `/doctor` | System health check — validates config, links, staleness |
 | `/search` | Full-text search across all brain files and relationships |
+| `/recall` | Quick meeting query via Granola MCP (with brain context) |
 
 ## Helper Scripts (in scripts/)
 
@@ -99,6 +100,7 @@ brain/
 ├── handoff.md          # Rolling daily log
 ├── commitments.md      # Action items with accountability
 ├── health.md           # System metrics
+├── onboarding.md       # Onboarding tracker (optional, activates onboarding mode)
 ├── threads/            # Topic files
 ├── people/             # Relationship context
 └── archive/            # Old meetings and contexts
@@ -130,6 +132,17 @@ During `/wind-down`:
 - Review proposed changes by confidence level (🟢/🟡/🔴)
 - Corrections become durable rules in preferences.md
 - Say **"commit"** when ready to write all changes
+
+## Onboarding Mode
+
+When `onboarding.md` exists in the brain root, wind-down and wake-up activate onboarding mode:
+
+- **Wind-down** adds an "Onboarding Pulse" section to the review — surfaces which open questions got answered, new questions, expectation updates, and opportunities. Updates `onboarding.md` during commit.
+- **Wake-up** adds an "Onboarding Focus" section — cross-references today's meetings against open questions and opportunities to suggest what to ask/pursue.
+
+To activate: create `onboarding.md` in the brain root with sections for Open Questions, Stakeholder Expectations, Opportunities, Themes, Landscape Map, and a 30-Day Scorecard.
+
+To deactivate: delete or archive the file.
 
 ## Known Gotchas
 - **Slash commands not working?** Restart the Claude Code session after adding new commands to `.claude/commands/`

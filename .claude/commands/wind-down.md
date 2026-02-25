@@ -45,6 +45,14 @@ Run `./scripts/brain-lock.sh acquire [brain-root] wind-down`. If the lock is hel
 2. Read `preferences.md` in full. Follow every rule precisely — including the System Thresholds section.
 3. Read `health.md` to see the latest run metrics and history.
 
+### 0a-post. Check for Onboarding Mode
+
+Check if `onboarding.md` exists in the brain root. If it does:
+- Read it in full alongside the other living documents
+- Parse the `Started` date from the header and calculate the current day number
+- Note the open questions, stakeholder expectations, and opportunities for use in Phase 2
+- If the current date is past the `Target` date in the header, queue a prompt for Section 6: "🎓 You've passed your onboarding target date (Day N). Want to keep the tracker running, or archive it?"
+
 ### 0b. Preflight Health Check
 
 Check for issues before doing any heavy processing:
@@ -300,6 +308,40 @@ Before compiling changes, look across all of today's meeting summaries for overl
 
 This prevents thread files from accumulating redundant entries and keeps the review focused.
 
+### Onboarding Synthesis (if onboarding.md exists)
+
+After the cross-meeting synthesis above, perform a separate onboarding-specific pass. Read the existing `onboarding.md` and compare against today's meeting summaries. For each section, identify what changed today:
+
+**Open Questions:**
+- Any questions that today's meetings answered? → Propose checking them off (with source).
+- Any NEW questions that emerged? → Propose adding to the appropriate category.
+- Confidence: 🟢 if a question was explicitly and clearly answered. 🟡 if partially answered — add context but don't check it off.
+
+**Stakeholder Expectations:**
+- Did anyone express a new expectation of the user? (Look for: "I need you to...", "your job is...", "by [date] you should...", feedback on performance, assignment changes)
+- Did any existing expectation get progress or an update? → Propose status change.
+- Confidence: 🟡 by default for new expectations (high-stakes — always worth reviewing).
+
+**Opportunities:**
+- Did today's meetings reveal a gap, frustration, or unowned problem the user could step into?
+- Does the user's background give them an advantage here?
+- Only surface opportunities actionable within the onboarding window.
+- Confidence: 🟡 or 🔴 (opportunities are inherently judgment calls).
+
+**Themes:**
+- Do today's meetings reinforce an existing theme? → Note the reinforcement.
+- Does a new cross-cutting pattern emerge across 2+ meetings or 2+ days? → Propose a new theme.
+- Confidence: 🟢 if reinforcing existing. 🟡 if proposing new.
+
+**Landscape Map:**
+- Any significant new understanding of product/team/org? → Propose update.
+- Only update for material changes, not incremental facts (those go in threads).
+
+**Scorecard:**
+- If today is the last day of a scorecard week, propose a status update (🟢/🟡/🔴) with brief reasoning.
+
+Compile onboarding proposals alongside the other entity decisions, in a separate "Onboarding Updates" group.
+
 ### Compile Proposed Changes
 
 For each proposed change, include:
@@ -401,6 +443,37 @@ This section shows the agent's reasoning. Group by confidence level so the user 
 ❓ Any decisions to override? Anything I should have flagged that I didn't?
 ```
 
+### Section 2.5: Onboarding Pulse (if onboarding.md exists)
+
+Only shown when `onboarding.md` exists in the brain root. Shows deltas only — what changed today, not the full state. Designed for ~30 seconds of review. If nothing onboarding-relevant happened today, skip this section entirely.
+
+```
+### 🧭 Onboarding Pulse (Day [N]/[target])
+
+**Questions Answered Today:** [N]
+- [x] [question] → [answer source] [🟢/🟡]
+- ...
+
+**New Questions:** [N]
+- [ ] [question] [🟡/🔴]
+- ...
+
+**Expectation Updates:**
+- [person]: [update] [🟡]
+- ...
+
+**New Opportunities:** (if any)
+- [opportunity] [🟡/🔴]
+- ...
+
+**Theme Reinforcements:** (if any)
+- [theme]: [what reinforced it today]
+
+(Open questions remaining: [N]. Scorecard: Week [N] — [status])
+
+❓ Any questions I should add or remove? Any expectations I'm missing?
+```
+
 ### Section 3: Commitments Delta
 
 ```
@@ -491,9 +564,10 @@ When the user says "commit" (or equivalent approval):
 2. Thread files (append new entries, update `last_mentioned`, update status)
 3. People files (append to history, update "Current Focus" and "Open Items")
 4. `commitments.md` (add/complete/remove items)
-5. `handoff.md` — **Idempotent**: If today's entry already exists, replace it in place. If not, prepend new entry at top.
-6. `preferences.md` (append any new rules from this session's corrections)
-7. `health.md` — **Idempotent**: Use `scripts/update-health.sh` which handles both insert and update for the same date.
+5. `onboarding.md` (if it exists) — Check off answered questions (strikethrough original text), add new questions to appropriate categories, update stakeholder expectations table, append new opportunities with date, update themes, update landscape map if material changes, update scorecard at week boundaries, increment the day counter.
+6. `handoff.md` — **Idempotent**: If today's entry already exists, replace it in place. If not, prepend new entry at top.
+7. `preferences.md` (append any new rules from this session's corrections)
+8. `health.md` — **Idempotent**: Use `scripts/update-health.sh` which handles both insert and update for the same date.
 
 ### Mark Inbox Items as Processed
 After writing all files, move processed inbox items so they aren't re-processed:

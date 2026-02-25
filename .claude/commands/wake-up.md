@@ -28,6 +28,7 @@ Read these files in order:
 3. `health.md` — Check last wind-down date. If there's a gap, note it in the briefing.
 4. `handoff.md` — At minimum the most recent entry, ideally last 2-3 days
 5. `commitments.md`
+6. `onboarding.md` — If this file exists, onboarding mode is active. Note the current day number (from the `Started` date), open questions, stakeholder expectations, and opportunities for use in the briefing.
 
 Scan `threads/` and `people/` directory listings so you know what's available, but don't read every file yet — only pull specific files as needed when building the briefing (lazy reads).
 
@@ -55,6 +56,17 @@ Generate a morning briefing with these sections:
 
 ### Handoff Pickup
 Summarize yesterday's key outcomes, energy signals, and anything flagged for morning review. **3-5 bullets max.**
+
+### Onboarding Focus (if onboarding.md exists)
+
+Only shown when `onboarding.md` exists. Cross-reference today's calendar against the onboarding tracker. **3-4 bullets max.** Skip this section entirely if nothing connects to today.
+
+- **This week's focus**: From the scorecard — e.g., "Week 2: Deepen — first priority deep dives"
+- **Top unanswered questions for today**: Cross-reference open questions against today's meeting attendees and topics. Surface 1-2 questions that today's meetings could answer. Format as: "Your [time] with [person] is a good chance to ask about [question]"
+- **Stale expectations**: Any expectation with status 🔴 for more than 5 days. Flag as: "⚠️ [person] expects [thing] — no progress yet"
+- **Opportunity nudge**: If an identified opportunity connects to today's meetings, surface it. Limit to 1. Format as: "Today's [meeting] touches on [opportunity]. Consider [action]."
+
+This section adds an onboarding lens over the day. It does not replace the handoff pickup or meeting prep — it complements them.
 
 ### Today's Meetings
 For each meeting on the calendar:
