@@ -1,7 +1,5 @@
 # Brain System Roadmap
 
-> **Note**: Some sections below reference features pruned during the hardening sprint (Linear, browser extension, background processor, notifications, follow-ups, weekly review). Kept for historical context.
-
 A phased project plan to evolve brain-template from a CLI batch processor into an always-on personal knowledge system.
 
 **Principle**: Each phase is independently valuable. Ship each one before starting the next.
@@ -234,40 +232,14 @@ A phased project plan to evolve brain-template from a CLI batch processor into a
 - Replaces fragile Granola cache calendar parsing
 - **Files**: `scripts/calendar-sync.sh`, `scripts/google-auth.py`, `web/routes/auth.js`
 
-### 5.3 Continuous background processor
-- Upgrade the Phase 2 snapshotter into a full processor
-- When new transcript lands in inbox: auto-generate draft summary, extract entities, queue for review
-- Uses Claude API (not Claude Code) for processing — faster, scriptable
-- Results land in `inbox/drafts/` as proposed changes
-- Web UI review interface (Phase 4.6) shows these drafts
-- Wind-down becomes: "review what the system already prepared" instead of "wait while it processes"
-- **Files**: `scripts/background-processor.py`
+### Pruned Features (5.3–5.6)
 
-### 5.4 Notification system
-- `scripts/notify.sh` — sends a macOS notification (osascript)
-- Triggers: meeting prep ready, stale commitment detected, wind-down reminder (8pm if not run)
-- Optional: Slack webhook for delivery to phone
-- **Files**: `scripts/notify.sh`
+The following were designed but removed during the hardening sprint to keep the system focused on the core loop:
 
-### 5.5 Weekly review auto-generation
-- New command: `.claude/commands/weekly-review.md`
-- Auto-generates every Friday (or on demand):
-  - Threads that moved forward this week
-  - Threads that stalled
-  - New threads created
-  - Commitments completed / added / stale
-  - People you talked to most / least
-  - Relationship maintenance suggestions ("haven't spoken to X in 3 weeks")
-  - Energy/load trends from health.md
-- **Files**: `.claude/commands/weekly-review.md`, `scripts/generate-weekly.py`
-
-### 5.6 Follow-up draft generation
-- After wind-down identifies a commitment like "send X to Y":
-  - Auto-draft the message (email body, Slack message, etc.)
-  - Store in `inbox/drafts/follow-ups/`
-  - Surface in web UI: "You committed to sending Wei the AISP analysis. Here's a draft."
-  - User reviews, edits, sends manually (system never sends on its own)
-- **Files**: `scripts/generate-followups.py`, `web/views/followups.html`
+- **5.3 Background processor** — continuous transcript processing via Claude API. Cut because wind-down with checkpoint recovery handles the same workflow with better human oversight.
+- **5.4 Notification system** — macOS/Slack notifications for prep, stale commitments, wind-down reminders. Cut to reduce moving parts; may revisit as a lightweight addition.
+- **5.5 Weekly review** — auto-generated weekly summary. Cut because the daily wind-down + wake-up loop covers most of this. Could be added as a simple command later.
+- **5.6 Follow-up drafts** — auto-draft messages from commitments. Cut as premature — the system doesn't send anything on its own, and drafting quality depends on more context than wind-down captures.
 
 ---
 
@@ -291,18 +263,10 @@ A phased project plan to evolve brain-template from a CLI batch processor into a
 - Follow-up drafts openable in email client
 - **Files**: `scripts/email-watcher.py` or `web/integrations/email.js`
 
-### 6.3 Linear/Jira sync
-- Commitments with `@linear:ISSUE-123` tag sync bidirectionally
-- When a ticket moves to "Done" in Linear, commitment auto-completes
-- When a new commitment is created in wind-down, optionally create a Linear ticket
-- **Files**: `web/integrations/linear.js`
+### Pruned Features (6.3–6.4)
 
-### 6.4 Browser extension (stretch)
-- "Add to brain" button on any web page
-- Captures: URL, title, selected text, user note
-- Drops in inbox/web/ for next wind-down processing
-- Simple Chrome extension, sends to local web server
-- **Files**: `extension/` directory
+- **6.3 Linear/Jira sync** — bidirectional commitment ↔ ticket sync. Cut because it requires always-on API access and adds complexity for marginal benefit at this stage.
+- **6.4 Browser extension** — "Add to brain" button for web pages. Cut to keep the scope to CLI + web UI.
 
 ---
 
@@ -314,11 +278,11 @@ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4 ──→ Phase 5 
 ```
 
 ### Dependencies
-- Phase 2 (inbox) is needed by Phase 4.6 (review UI) and Phase 5.3 (background processor)
+- Phase 2 (inbox) is needed by Phase 4.6 (review UI)
 - Phase 3 (SQLite) is needed by Phase 4.4 (search page) and Phase 5.1 (meeting prep)
 - Phase 4 (web UI) is needed by Phase 5 (proactive ops surface through the UI)
 - Phase 5.2 (calendar) is needed by Phase 5.1 (meeting prep timing)
-- Phase 6 items are all independent of each other
+- Phase 6 items are independent of each other
 
 ### What stays in brain-template (public)
 - All scripts, commands, web UI code, schema, extension
@@ -332,12 +296,8 @@ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4 ──→ Phase 5 
 
 ## Open Questions
 
-1. **Claude API vs Claude Code for background processing?** Phase 5.3 suggests Claude API for scriptable processing. This means an API key and cost. Alternative: keep everything in Claude Code sessions but make them faster.
+1. **Auth for web UI?** It's localhost-only, but should there be a password? Or is "only accessible on your machine" sufficient?
 
-2. **Auth for web UI?** It's localhost-only, but should there be a password? Or is "only accessible on your machine" sufficient?
+2. **Should the web UI replace wind-down/wake-up?** Or complement them? Could wind-down become "open the review page" instead of a CLI session.
 
-3. **How much should the system auto-draft?** Follow-up emails, meeting prep, weekly reviews — should these be opt-in per type, or all-on by default?
-
-4. **Notification channel?** macOS notifications, Slack DMs, email, or all three? Start with one and expand?
-
-5. **Should the web UI replace wind-down/wake-up?** Or complement them? Could wind-down become "open the review page" instead of a CLI session.
+3. **Calendar abstraction?** Currently coupled to Granola. Worth abstracting behind a `get-calendar.sh` interface to support Google Calendar or other sources?

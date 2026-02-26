@@ -17,8 +17,9 @@ inbox/
 .brain.db-wal
 .brain.db-shm
 
-# Wind-down checkpoint (session state, not data)
+# Wind-down working files (session state, not data)
 .wind-down-checkpoint.json
+.wind-down-proposals.md
 
 # Session lockfile
 .brain.lock

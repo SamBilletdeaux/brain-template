@@ -15,7 +15,7 @@ def brain_dir():
     for subdir in [
         "threads", "people", "archive", "archive/handoffs",
         "archive/commitments", "inbox", "inbox/granola",
-        "inbox/prep", "inbox/drafts", "inbox/.processed",
+        "inbox/prep", "inbox/.processed",
     ]:
         os.makedirs(os.path.join(d, subdir), exist_ok=True)
 

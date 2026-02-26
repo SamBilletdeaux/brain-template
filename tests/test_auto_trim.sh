@@ -120,7 +120,7 @@ echo ""
 echo "=== Test: No trimming needed ==="
 
 BRAIN=$(mktemp -d)
-mkdir -p "$BRAIN/inbox/prep" "$BRAIN/inbox/drafts" "$BRAIN/inbox/.processed"
+mkdir -p "$BRAIN/inbox/prep" "$BRAIN/inbox/.processed"
 
 {
     echo "# Handoff"
@@ -173,15 +173,14 @@ rm -rf "$BRAIN"
 
 # --- Test 5: Inbox cleanup (old files) ---
 echo ""
-echo "=== Test: Inbox cleanup (old prep/draft files) ==="
+echo "=== Test: Inbox cleanup (old prep files) ==="
 
 BRAIN=$(mktemp -d)
-mkdir -p "$BRAIN/inbox/prep" "$BRAIN/inbox/drafts"
+mkdir -p "$BRAIN/inbox/prep"
 
 # Create old files (use touch -t to set modification time)
 touch -t 202501010000 "$BRAIN/inbox/prep/old-prep.md"
 touch "$BRAIN/inbox/prep/fresh-prep.md"
-touch -t 202501010000 "$BRAIN/inbox/drafts/old-draft.md"
 
 bash "$AUTO_TRIM" "$BRAIN" > /dev/null 2>&1
 

@@ -6,7 +6,6 @@
 #   - health.md: keep last 30 history rows
 #   - commitments.md: archive completed items older than 30 days
 #   - inbox/prep/: delete packets older than 7 days
-#   - inbox/drafts/: delete drafts older than 7 days
 #   - inbox/.processed/: delete markers older than 30 days
 #
 # Usage:
@@ -228,16 +227,6 @@ if [ -d "$BRAIN_ROOT/inbox/prep" ]; then
     if [ "$OLD_PREP" -gt 0 ]; then
         find "$BRAIN_ROOT/inbox/prep" -type f -mtime +7 -delete 2>/dev/null
         echo "inbox/prep: deleted $OLD_PREP old packets"
-        TRIMMED=$((TRIMMED + 1))
-    fi
-fi
-
-# Draft files older than 7 days
-if [ -d "$BRAIN_ROOT/inbox/drafts" ]; then
-    OLD_DRAFTS=$(find "$BRAIN_ROOT/inbox/drafts" -type f -mtime +7 2>/dev/null | wc -l | xargs)
-    if [ "$OLD_DRAFTS" -gt 0 ]; then
-        find "$BRAIN_ROOT/inbox/drafts" -type f -mtime +7 -delete 2>/dev/null
-        echo "inbox/drafts: deleted $OLD_DRAFTS old drafts"
         TRIMMED=$((TRIMMED + 1))
     fi
 fi

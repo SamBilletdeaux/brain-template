@@ -187,14 +187,12 @@ Commands:
 
 ---
 
-## Proactive Operations
-
-The system doesn't just wait for you to ask — it watches, prepares, and nudges.
+## Standalone Utilities
 
 ### Meeting Prep (generate-prep.py)
-**What**: Before your meetings, auto-generates a prep packet with attendee context, relevant threads, open commitments, and recent handoff mentions.
+**What**: A standalone script that generates a prep packet for upcoming meetings — attendee context, relevant threads, open commitments, and recent handoff mentions.
 **Why**: Walking into a meeting prepared means better outcomes. This pulls everything you need from your brain files in seconds instead of you having to open and read multiple files.
-**How**: Reads calendar data from Granola, matches attendees to people files (by name, email, or even parsing the meeting title), finds threads that mention those people, and checks for related commitments. Output goes to `inbox/prep/`.
+**How**: Run manually with `python3 scripts/generate-prep.py ~/brain`. Reads calendar data from Granola, matches attendees to people files (by name, email, or even parsing the meeting title), finds threads that mention those people, and checks for related commitments. Output goes to `inbox/prep/`. The web UI's `/prep` page displays these packets.
 
 ---
 

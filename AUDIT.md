@@ -1,18 +1,16 @@
-# System Audit — Post-Roadmap Honest Assessment
+# System Audit
 
-> **Note**: Some sections below reference features pruned during the hardening sprint (Linear, browser extension, background processor, notifications, follow-ups, weekly review). Kept for historical context.
-
-Written after completing all 6 phases of the roadmap. This is a friend-level honest review of where the system actually stands, what's going to break, what's missing, and what needs to happen before this is a genuinely reliable 10x productivity tool.
+An honest review of where the system stands, what's going to break, what's missing, and what needs attention. Updated after the hardening sprint.
 
 ---
 
 ## Executive Summary
 
-The system has great bones. The core loop (wind-down → handoff → wake-up) is well-designed and the prompt engineering in the slash commands is genuinely strong. The infrastructure built in Phases 1-3 (validation, inbox, search index) is solid and tested against real data.
+The system has great bones. The core loop (wind-down → handoff → wake-up) is well-designed and the prompt engineering in the slash commands is genuinely strong. The infrastructure (validation, inbox, search index, auto-trim, session locking) is solid and tested.
 
-But we built Phases 4-6 fast, and it shows. The web UI works but is read-only with no interaction. The integrations are structurally complete but untested against real services. And the biggest gap isn't code — it's that the AI processing layer (the part that actually makes decisions about your meetings) has no automated quality checks. The system trusts Claude completely and only catches mistakes when you manually review.
+The web UI works but is read-only with no interaction. The integrations (Slack, email) are structurally complete but untested against real services. The biggest gap isn't code — it's that the AI processing layer (the part that actually makes decisions about your meetings) has no automated quality checks.
 
-**Bottom line**: Phases 1-3 are production-ready. Phase 4 is a solid v0.1. Phases 5-6 are scaffolding that needs real-world testing before you can rely on them.
+**Bottom line**: Core system is production-ready. Web UI is a solid v0.1. Integrations need real-world testing.
 
 ---
 
@@ -38,58 +36,42 @@ HOW-IT-WORKS.md explains things at the right level for a non-engineer. CLAUDE.md
 
 **Resolution**: `scripts/auto-trim.sh` now runs automatically during every wind-down. Keeps handoff.md to 14 entries (archives older to `archive/handoffs/YYYY-QN.md`), trims health.md to 30 rows, archives completed commitments >30 days, and cleans up old inbox files. No manual intervention needed.
 
-### 2. ~~The background processor's rule-based mode is nearly useless~~ RESOLVED
-
-**Resolution**: Stripped the AI mode entirely. The background processor is now purely a pre-indexer — it extracts entities (people, threads) and pattern-matches action/decision language. All real AI analysis happens in Claude Code during /wind-down. No API key needed. The action item extraction is still noisy, but that's acceptable for a pre-index — wind-down reviews the raw transcripts with full AI capability.
-
-### 3. The search index doesn't know about inbox content
+### 2. The search index doesn't know about inbox content
 
 **The problem**: indexer.py only indexes markdown files in `threads/`, `people/`, `archive/meetings/`, and root files. It completely ignores:
 - `inbox/prep/` — meeting prep packets
-- `inbox/drafts/` — background processor output
 - `inbox/notes/` — captured notes
 - `inbox/email/` — forwarded emails
 - `inbox/slack/` — starred messages
 
 So when you search "what prep did I generate for the Simone meeting?", the search index returns nothing. The inbox is a black hole for search.
 
-**Fix needed**: Either index inbox content (with a separate type so it's distinguishable), or accept that inbox is ephemeral and only indexed content matters. But then the web UI pages for prep/drafts/follow-ups should make that clear.
+**Fix needed**: Either index inbox content (with a separate type so it's distinguishable), or accept that inbox is ephemeral and only indexed content matters.
 
-### 4. No test suite
+### 3. The web server has no authentication
 
-**The problem**: Zero automated tests. Every script was tested manually during development, but there's nothing to catch regressions. The extract-granola.sh null safety fix, the archive.sh integer comparison bug, the double-tilde bug — all of these could have been caught by tests and could easily recur if someone modifies the code.
+**The problem**: The web UI runs on localhost:3141 with zero authentication. Anyone on your local network who can reach that port can read your brain — every thread, every person file, every commitment. The `/api/inbox` endpoint accepts POST requests from anyone, meaning any local process can inject content into your brain.
 
-**This matters because**: The system processes your personal data. A regression in update-health.sh could corrupt health.md. A bug in the indexer could silently stop indexing files. A change to snapshot-transcripts.sh could start duplicating meetings.
-
-**Fix needed**: At minimum, add tests for the scripts that handle data integrity: indexer.py, snapshot-transcripts.sh, update-health.sh, archive.sh. Property-based tests would be ideal for the markdown parsing code.
-
-### 5. The web server has no authentication
-
-**The problem**: The web UI runs on localhost:3141 with zero authentication. Anyone on your local network who can reach that port can read your brain — every thread, every person file, every commitment. The `/api/inbox` endpoint accepts POST requests from anyone, which the browser extension relies on but also means any local process can inject content into your brain.
-
-**This is especially concerning because**: The browser extension sends content to localhost without any auth token. If you're on a shared network (coffee shop, office), someone could potentially read your brain or inject content.
+**This is especially concerning because**: If you're on a shared network (coffee shop, office), someone could potentially read your brain or inject content.
 
 **Fix needed**: At minimum, add a bearer token check to the API endpoint. For the web UI, consider binding to 127.0.0.1 only (not 0.0.0.0) which Express does by default — verify this. A proper auth layer would be a shared secret in a config file.
 
-### 6. The integrations are untested shells
+### 4. The integrations are untested shells
 
-**The problem**: Slack, email, and Linear integrations are structurally complete but have never been tested against real services. They were written in one pass without iteration. Real-world issues will include:
+**The problem**: Slack and email integrations are structurally complete but have never been tested against real services. They were written in one pass without iteration. Real-world issues will include:
 - Slack's event subscription requires a publicly accessible URL (Socket Mode is the workaround, but needs the app-level token which is separate from the bot token)
 - The IMAP watcher doesn't handle OAuth2 (Gmail requires it — app passwords are being deprecated)
-- Linear's GraphQL schema may have changed or the query patterns may not match the actual API
 - Error handling is minimal — one API failure could crash the server
 
-**Fix needed**: Pick ONE integration, actually set it up end-to-end, and fix everything that breaks. That experience will inform what the others need. I'd start with Slack since it has the most day-to-day utility.
+**Fix needed**: Pick ONE integration, actually set it up end-to-end, and fix everything that breaks. That experience will inform what the other needs. I'd start with Slack since it has the most day-to-day utility.
 
 ---
 
 ## What's Missing Entirely
 
-### 1. Conflict detection between sessions
+### 1. ~~Conflict detection between sessions~~ RESOLVED
 
-**The problem**: If you run two Claude Code sessions against the same brain (e.g., one doing wind-down while another is responding to a question), they can both write to the same files simultaneously. Git will catch it post-facto, but the immediate experience could be corrupted files or lost writes.
-
-**Fix needed**: A lockfile mechanism. Before wind-down starts writing, create `brain/.lock` with the session PID. Check for it on startup. Simple and effective.
+**Resolution**: `scripts/brain-lock.sh` provides session lockfiles with PID tracking and stale lock detection. Wind-down acquires a lock before writing and releases it on completion.
 
 ### 2. No way to undo a bad wind-down
 
@@ -117,11 +99,11 @@ So when you search "what prep did I generate for the Simone meeting?", the searc
 
 **Fix needed**: Abstract calendar data behind a simple interface. `scripts/get-calendar.sh` that outputs a consistent JSON format regardless of source. Implement the Granola adapter first (already have it), then add Google Calendar as a second adapter.
 
-### 6. No observability for background processes
+### 6. No observability for the snapshot daemon
 
-**The problem**: The snapshot daemon, notification agents, and background processor all run silently. If they fail, you won't know. The daemon logs to `/tmp/brain-server.log` but nobody checks that. The notification agents have no logging at all.
+**The problem**: The snapshot daemon runs silently. If it fails, you won't know. The daemon logs to `/tmp/brain-server.log` but nobody checks that.
 
-**Fix needed**: A `/status` command or dashboard widget that shows: is the daemon running? When did it last snapshot? How many transcripts are queued? Are notifications firing? When was the last background processing run?
+**Fix needed**: A `/status` command or dashboard widget that shows: is the daemon running? When did it last snapshot? How many transcripts are queued?
 
 ### 7. Preferences.md has no structure validation
 
@@ -172,7 +154,7 @@ The system requires significant upfront investment before it's useful:
 2. Install the daemon — `./scripts/install-daemon.sh`
 3. Run your first wind-down — this takes 15-20 minutes and requires active participation
 4. Install the git hook — `./scripts/install-hooks.sh`
-5. Optionally: install notifications, start the web server, install the extension
+5. Optionally: start the web server, set up integrations
 
 That's 5+ manual setup steps with no guided walkthrough. The `/setup` command handles step 1 but doesn't mention steps 2-5. A new user could easily miss the daemon installation and lose transcripts.
 
@@ -197,14 +179,14 @@ The preferences.md template has placeholder sections but no real examples of goo
 If I had to fix things in order of impact:
 
 1. ~~**Auto-archive for handoff.md**~~ DONE — auto-trim.sh runs in every wind-down
-2. **Test suite for data-integrity scripts** — prevents silent corruption (IN PROGRESS)
-3. **Lock file for concurrent sessions** — prevents data loss
+2. ~~**Test suite for data-integrity scripts**~~ DONE — 7 test files covering core scripts
+3. ~~**Lock file for concurrent sessions**~~ DONE — brain-lock.sh with PID tracking
 4. **Make /setup comprehensive** — prevents broken installations
 5. **Abstract calendar source** — removes Granola single point of failure
-6. **Background process observability** — prevents silent failures
+6. **Daemon observability** — prevents silent failures
 7. **Web UI auth** — prevents data exposure
 8. **Input validation on inbox API** — prevents crashes and injection
-9. **Preferences conflict detection** — prevents contradictory rules
+9. ~~**Preferences conflict detection**~~ DONE — check-preferences.sh detects contradictions
 10. **One real integration end-to-end** — validates the integration architecture
 
 ---
@@ -215,6 +197,6 @@ This system is at the "impressive prototype" stage, not the "reliable daily tool
 
 The biggest risk isn't a specific bug — it's the slow accumulation of entropy. Files getting too long, preferences contradicting each other, the search index drifting out of sync, background processes silently failing. The system has no immune system against entropy. Adding one is the most important thing you can do next.
 
-The second biggest risk is abandonment. The system requires daily engagement (wind-down) to stay useful. Miss a week and transcripts are gone, context is stale, and the activation energy to catch up is high. The daemon captures transcripts, and the background processor pre-indexes entities, but the actual AI processing step (wind-down) is still manual and requires a Claude Code session.
+The second biggest risk is abandonment. The system requires daily engagement (wind-down) to stay useful. Miss a week and transcripts are gone, context is stale, and the activation energy to catch up is high. The daemon captures transcripts as a safety net, but the actual AI processing step (wind-down) is still manual and requires a Claude Code session.
 
 Build the immune system, then stress-test it with real daily use. That's where the real learning happens.
