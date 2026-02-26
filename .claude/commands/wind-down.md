@@ -231,12 +231,25 @@ When moving to Phase 2+, read ONLY the summary files you just wrote to disk. Do 
 
 ---
 
-## Phase 2: Identify Updates to Living Documents
+## Phase 1.5: Extract Entity Proposals
 
-**Progress signal**: Before starting this phase, show:
-`"All meetings processed. Compiling proposed changes..."`
+**CRITICAL: Process-and-Flush Pattern (continued)**
 
-Before writing anything, compile a complete list of proposed changes. Read all potentially relevant existing files first. Use the decision frameworks below to guide every decision.
+After all meeting summaries are written, extract proposed changes meeting-by-meeting using the same process-and-flush pattern as Phase 1. This keeps context bounded — each meeting loads ~35KB instead of loading everything at once (~128KB+).
+
+For each meeting summary (in the order they were written):
+
+1. **Read**: The summary file from `archive/meetings/YYYY-MM-DD/{meeting-slug}.md` + the proposals working file (`.wind-down-proposals.md` in the brain root — empty for the first meeting)
+2. **Load selectively**: Only the thread/people files referenced in the summary's "Thread References" section and attendee list. List directory contents first — don't pre-load everything.
+3. **Read**: `commitments.md` and `onboarding.md` (if it exists)
+4. **Propose**: Using the decision frameworks below, identify what this meeting implies for threads, people, commitments, and onboarding. Check the proposals file for existing entries on the same topics — **merge rather than duplicate**. If this meeting references a thread already proposed by a previous meeting, synthesize into one coherent update.
+5. **Append**: Write proposals to `.wind-down-proposals.md` using the Proposals File Format below
+6. **Flush**: Move to the next meeting. Do NOT hold previous summaries in context.
+
+**Progress signal**: After each meeting's proposals are extracted, show:
+`"Extracted proposals [N]/[total]: [title]"`
+
+**Update checkpoint**: After each extraction, set `"phase": 1.5` in the checkpoint.
 
 ### Decision Frameworks
 
@@ -298,22 +311,12 @@ Before writing anything, compile a complete list of proposed changes. Read all p
 - It's owned entirely by someone else with no dependency from the user
 - It's a standing process, not a discrete deliverable
 
-### Cross-Meeting Synthesis
+### Onboarding Extraction (if onboarding.md exists)
 
-Before compiling changes, look across all of today's meeting summaries for overlap:
-- **Same thread referenced in multiple meetings?** Synthesize into one update, not three separate ones. Note which meetings contributed.
-- **Conflicting information across meetings?** Flag as 🔴 — "Meeting A suggested X but meeting B suggested Y. Which is current?"
-- **Same commitment mentioned in different contexts?** Deduplicate. One entry, multiple sources.
-- **Relationship signals from multiple touchpoints?** Merge into a single people file update.
-
-This prevents thread files from accumulating redundant entries and keeps the review focused.
-
-### Onboarding Synthesis (if onboarding.md exists)
-
-After the cross-meeting synthesis above, perform a separate onboarding-specific pass. Read the existing `onboarding.md` and compare against today's meeting summaries. For each section, identify what changed today:
+For each meeting, perform an onboarding-specific pass. Read the existing `onboarding.md` and compare against this meeting's summary:
 
 **Open Questions:**
-- Any questions that today's meetings answered? → Propose checking them off (with source).
+- Any questions that this meeting answered? → Propose checking them off (with source).
 - Any NEW questions that emerged? → Propose adding to the appropriate category.
 - Confidence: 🟢 if a question was explicitly and clearly answered. 🟡 if partially answered — add context but don't check it off.
 
@@ -323,14 +326,14 @@ After the cross-meeting synthesis above, perform a separate onboarding-specific 
 - Confidence: 🟡 by default for new expectations (high-stakes — always worth reviewing).
 
 **Opportunities:**
-- Did today's meetings reveal a gap, frustration, or unowned problem the user could step into?
+- Did this meeting reveal a gap, frustration, or unowned problem the user could step into?
 - Does the user's background give them an advantage here?
 - Only surface opportunities actionable within the onboarding window.
 - Confidence: 🟡 or 🔴 (opportunities are inherently judgment calls).
 
 **Themes:**
-- Do today's meetings reinforce an existing theme? → Note the reinforcement.
-- Does a new cross-cutting pattern emerge across 2+ meetings or 2+ days? → Propose a new theme.
+- Does this meeting reinforce an existing theme? → Note the reinforcement.
+- Does a new cross-cutting pattern emerge (check proposals file for themes from earlier meetings)? → Propose a new theme.
 - Confidence: 🟢 if reinforcing existing. 🟡 if proposing new.
 
 **Landscape Map:**
@@ -340,22 +343,57 @@ After the cross-meeting synthesis above, perform a separate onboarding-specific 
 **Scorecard:**
 - If today is the last day of a scorecard week, propose a status update (🟢/🟡/🔴) with brief reasoning.
 
-Compile onboarding proposals alongside the other entity decisions, in a separate "Onboarding Updates" group.
+### Proposals File Format
 
-### Compile Proposed Changes
+`.wind-down-proposals.md` is a working file in the brain root, deleted after commit. Structure:
 
-For each proposed change, include:
-- **What**: The specific change
-- **Why**: What in today's meetings prompted this
-- **Confidence**: 🟢 High / 🟡 Medium / 🔴 Low (see Confidence Framework below)
+    ## Thread Updates
+    ### [[thread-name]] 🟢
+    - [what to add/change] — from: [meeting-slug]
+    - [merged update from second meeting] — from: [meeting-slug-2]
 
-Categories:
-1. **Thread updates** (existing files to modify)
-2. **New threads** (files to create)
-3. **People updates** (existing files to modify)
-4. **New people files** (files to create)
-5. **Commitments** (add, complete, or remove)
-6. **Handoff entry** (draft for top of `handoff.md`)
+    ## New Threads
+    ### [[proposed-name]] 🟡
+    - [why] — from: [meeting-slug]
+
+    ## People Updates
+    ### [[person]] 🟢
+    - [what changed] — from: [meeting-slug]
+
+    ## New People
+    ### [[person]] 🟡
+    - [why creating] — from: [meeting-slug]
+
+    ## Commitments
+    - ADD: [commitment] — @owner 🟡 — from: [meeting-slug]
+    - COMPLETE: [commitment] 🟢 — from: [meeting-slug]
+
+    ## Onboarding
+    - ANSWERED: [question] → [answer] 🟡 — from: [meeting-slug]
+    - NEW Q: [question] 🟡
+    - EXPECTATION: [who]: [what] 🟡 — from: [meeting-slug]
+    - OPPORTUNITY: [what] 🟡 — from: [meeting-slug]
+    - THEME: [reinforcement] 🟢
+
+    ## Handoff Bullets
+    - [key outcome bullet] — from: [meeting-slug]
+    - [signal bullet] — from: [meeting-slug]
+
+---
+
+## Phase 2: Compile & Deduplicate
+
+**Progress signal**: Before starting this phase, show:
+`"All proposals extracted. Deduplicating and finalizing..."`
+
+Read `.wind-down-proposals.md` (the only input file needed). This contains all proposed changes from every meeting, already tagged with confidence and source.
+
+1. **Deduplicate**: If the same thread/person has entries from multiple meetings, synthesize into one coherent update. Note which meetings contributed.
+2. **Detect conflicts**: If proposals contradict each other (e.g., "Meeting A suggested X but Meeting B suggested Y"), flag as 🔴 for user review.
+3. **Compose handoff**: Assemble the handoff entry draft from the collected Handoff Bullets section.
+4. **Assign final confidence levels**: May adjust based on cross-meeting patterns (e.g., same topic in 3 meetings → upgrade from 🟡 to 🟢; contradictory signals → downgrade to 🔴).
+
+The output is the final list of proposed changes, organized by category (thread updates, new threads, people updates, new people, commitments, handoff entry, onboarding updates). Then proceed directly to Phase 4 (Sequential Review).
 
 ---
 
@@ -400,158 +438,146 @@ After the user reviews:
 
 ---
 
-## Phase 4: Guided Review
+## Phase 4: Sequential Review
 
-**DO NOT write to any living documents yet.** Present a structured review designed for the user to scan in 5-10 minutes. This is the primary training interface for the system.
+**DO NOT write to any living documents yet.** Present proposed changes as a sequence of review steps, organized by confidence level. Each step waits for user input before proceeding. This keeps the review conversational instead of monolithic.
 
-### Section 1: Meeting Summaries (Quick Scan)
+### Step 1: Meeting Summaries
+
+Present the meeting list with 1-line summaries. This is quick — the user just needs to confirm nothing is wildly off before the entity decisions are built on top.
 
 ```
 ### Meetings Processed
 
 1. **[Meeting Title]** ([time], [duration])
    [2-3 sentence summary]
-   → Full summary: `archive/meetings/YYYY-MM-DD/{slug}.md`
+   → `archive/meetings/YYYY-MM-DD/{slug}.md`
 
 2. ...
 
-❓ Anything I got wrong about these meetings? Missing context?
+Anything wrong? (Say "good" to continue)
 ```
 
-### Section 2: Entity Decisions (Focus Area)
+**Wait for user response.** If corrections, update saved summaries and note for preferences.md. Then proceed.
 
-This section shows the agent's reasoning. Group by confidence level so the user can prioritize.
+### Step 2: 🟢 High Confidence Batch
+
+Present all 🟢 items as a single batch. These auto-proceed unless the user flags something. Include:
+- Thread updates with unambiguous new information
+- Commitment completions explicitly confirmed in meetings
+- People file updates with clear new context
+- Onboarding items that are clearly answered (🟢 confidence)
+- Theme reinforcements
+- The handoff draft
 
 ```
-### Entity Decisions
+### 🟢 Auto-proceeding (flag anything wrong)
 
-#### 🟢 High Confidence (quick scan)
-- **Update [[thread-name]]**: [what] — [1-line why]
-- **Complete commitment**: "[commitment text]" — confirmed in [meeting]
+**Threads:**
+- Update [[thread-name]]: [what] — [1-line why]
 - ...
 
-#### 🟡 Medium Confidence (worth a look)
-- **NEW thread: [[thread-name]]**: [topic came up in meeting X and Y, seems likely to recur because Z]
-- **Update [[person]]**: [new context about their role/focus] — [why this seems relevant]
+**People:**
+- Update [[person]]: [what] — [1-line why]
 - ...
 
-#### 🔴 Low Confidence (need your input)
-- **Should this be a thread?** "[topic]" came up in [meeting] but I'm not sure if it's distinct from [[existing-thread]] or if it'll recur. What do you think?
-- **Commitment or just brainstorming?** "[item]" was discussed but no one explicitly said "I'll do this." Track it?
+**Commitments:**
+- Complete: "[commitment]" — confirmed in [meeting]
 - ...
 
-❓ Any decisions to override? Anything I should have flagged that I didn't?
+**Onboarding:**
+- [any 🟢 onboarding updates]
+- ...
+
+**Handoff draft:**
+[Full draft of handoff entry]
+
+All good? (Say "good" to continue, or flag specific items)
 ```
 
-### Section 2.5: Onboarding Pulse (if onboarding.md exists)
+**Wait for user response.** If they flag items, apply corrections and capture rules. Then proceed.
 
-Only shown when `onboarding.md` exists in the brain root. Shows deltas only — what changed today, not the full state. Designed for ~30 seconds of review. If nothing onboarding-relevant happened today, skip this section entirely.
+### Step 3: 🟡 Medium Confidence — One at a Time
+
+Present each 🟡 item individually with enough context for a quick decision. Wait for approval after each item (or small related group of 2-3 items max).
+
+```
+### 🟡 [N of M]: [Short description]
+
+**What:** [The specific proposed change]
+**Why:** [What in today's meetings prompted this]
+**Context:** [Any relevant existing state or cross-references]
+
+Approve, modify, or skip?
+```
+
+Group closely related items (e.g., a new people file + a commitment involving that person). But never group more than 2-3 items.
+
+After each response, apply the decision and capture any corrections as preference rules. Then present the next item.
+
+**Escape hatch:** If the user says "approve the rest" or "looks good, just commit" at any point, take that as blanket approval for remaining 🟡 items and skip to 🔴 items (or straight to commit if none).
+
+### Step 4: 🔴 Low Confidence — One at a Time
+
+Present each 🔴 item with full context and explicit options. These are genuine questions where the agent needs human judgment.
+
+```
+### 🔴 [N of M]: [Short description]
+
+**The question:** [What the agent is uncertain about]
+**Context:** [Relevant background]
+**Options:**
+  a) [Option A — what happens if chosen]
+  b) [Option B — what happens if chosen]
+  c) Skip for now
+
+What do you think?
+```
+
+After each response, capture the decision as a preference rule. These are the highest-value learning signals.
+
+### Step 5: Onboarding Pulse (if onboarding.md exists)
+
+Only shown when `onboarding.md` exists. A brief status summary — most onboarding items will have already been reviewed as part of Steps 2-4 at their respective confidence levels. This step just provides the rollup.
+
+If nothing onboarding-relevant happened today, skip entirely.
 
 ```
 ### 🧭 Onboarding Pulse (Day [N]/[target])
 
-**Questions Answered Today:** [N]
-- [x] [question] → [answer source] [🟢/🟡]
-- ...
+Open questions remaining: [N] ([N] answered today, [N] added)
+Scorecard: Week [N] — [status]
 
-**New Questions:** [N]
-- [ ] [question] [🟡/🔴]
-- ...
-
-**Expectation Updates:**
-- [person]: [update] [🟡]
-- ...
-
-**New Opportunities:** (if any)
-- [opportunity] [🟡/🔴]
-- ...
-
-**Theme Reinforcements:** (if any)
-- [theme]: [what reinforced it today]
-
-(Open questions remaining: [N]. Scorecard: Week [N] — [status])
-
-❓ Any questions I should add or remove? Any expectations I'm missing?
+Anything to add?
 ```
 
-### Section 3: Commitments Delta
+### Step 6: Commit
 
 ```
-### Commitments
+### Ready to commit
 
-**Adding:**
-- [ ] [commitment] — @owner — from [meeting] [🟢/🟡/🔴]
-- ...
+[N] items approved across [meetings/threads/people/commitments/onboarding]
+[N] corrections captured → [N] new preference rules
 
-**Completing:**
-- [x] [commitment] — confirmed in [meeting] [🟢/🟡]
-- ...
+**Domain terms / people context / sensitivity adjustments** to teach me?
 
-**No change (still open):**
-- [ ] [existing commitment] — [age] days old [⚠️ if stale per threshold]
-- ...
+[Any queued maintenance notes from preflight]
 
-❓ Any commitments I missed? Any I shouldn't be tracking?
+Say "commit" when ready.
 ```
 
-### Section 4: Relationship Notes
-
-Only shown if people file updates are proposed.
-
-```
-### People Updates
-
-- **[Person]**: [proposed update] — from [meeting] [🟢/🟡/🔴]
-  Current file: `people/[slug].md`
-- **NEW: [Person]**: [why creating a file] [🟡/🔴]
-- ...
-
-❓ Anything too personal, too negative, or inaccurate? (Corrections here become sensitivity rules)
-```
-
-### Section 5: Handoff Draft
-
-```
-### Handoff Entry for YYYY-MM-DD
-
-[Full draft of the handoff entry, ready to prepend to handoff.md]
-
-❓ Anything to adjust before this gets committed?
-```
-
-### Section 6: Learning & Preferences
-
-```
-### Anything to Teach Me?
-
-Based on today's processing, are there any:
-- **Domain terms** I should know? (Products, acronyms, internal names)
-- **People context** I'm missing? (Relationships, org structure, dynamics)
-- **Sensitivity adjustments**? (Things I included that I shouldn't have, or vice versa)
-- **Tracking calibration**? (Am I tracking too much? Too little? Wrong things?)
-
-Your corrections here get saved to preferences.md and improve every future run.
-```
-
-Also surface any queued maintenance notes from the preflight health check here.
-
-### Final Prompt
-
-> "Review complete! Take your time with sections 2 and 6 — those are where your feedback has the most impact. When you're happy (or happy enough), say **'commit'** and I'll write everything. You can also say **'commit with changes'** and list tweaks inline."
+**Wait for user response.** Apply any final corrections. When the user says "commit", proceed to Phase 6.
 
 ---
 
 ## Phase 5: Incorporate Feedback
 
-When the user provides corrections:
+Feedback is collected inline during Phase 4's sequential steps. This phase handles bookkeeping:
 
-1. **Update the proposed changes** based on feedback
-2. **Apply the reinforcement loop** (see Phase 3):
-   - For each correction, determine what rule would have prevented the error
-   - Draft the specific rule for preferences.md
-   - Include the rule in the commit
-3. **If corrections are significant**, show the updated sections (not the full review) and confirm
-4. **If corrections are minor** or the user said "commit with changes", proceed directly
+1. For each correction received during the review, determine what rule would have prevented the error
+2. Draft specific, reusable rules for preferences.md (not "be more careful" but "don't track commitments that are just scheduling tasks")
+3. Track total corrections for health.md metrics
+4. If the user provided corrections during the "commit" step, apply them before writing files
 
 ---
 
@@ -595,6 +621,7 @@ cd [brain-root] && git init && git add -A && git commit -m "initial brain commit
 ### Cleanup
 After a successful git commit, clean up session state:
 ```bash
+rm -f [brain-root]/.wind-down-proposals.md
 rm -f [brain-root]/.wind-down-checkpoint.json
 ./scripts/brain-lock.sh release [brain-root]
 ```
